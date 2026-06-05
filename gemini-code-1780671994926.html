@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat-simple</title>
+    <style>
+        :root {
+            --primary-color: #075e54;
+            --secondary-color: #128c7e;
+            --bg-light: #f0f2f5;
+            --chat-bg: #e5ddd5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        
+        /* Contenedor Adaptable e Interfaz Líquida */
+        .app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 500px;
+                height: 92vh;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            }
+        }
+        
+        /* PANTALLA LOGIN */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 30px;
+            text-align: center;
+            justify-content: center;
+            box-sizing: border-box;
+            background: white;
+            z-index: 20;
+        }
+        .login-screen h2 { color: var(--primary-color); margin-top: 0; }
+        select, input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px;
+        }
+        .btn-primary {
+            width: 100%; background: var(--primary-color); color: white; border: none;
+            padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: var(--secondary-color); }
+        .error-msg { color: red; font-size: 14px; display: none; margin-bottom: 10px; }
+
+        /* INTERFAZ DE CHAT PRINCIPAL */
+        .chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* HEADER PRINCIPAL */
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 14px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; overflow: hidden; }
+        .menu-toggle-btn {
+            background: none; border: none; color: white;
+            font-size: 24px; cursor: pointer; padding: 0 5px;
+        }
+        .header h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-settings {
+            background: rgba(255,255,255,0.2); color: white; border: none;
+            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: none;
+        }
+        .btn-logout {
+            background: var(--secondary-color); color: white; border: none;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+        }
+
+        /* MENÚ LATERAL (SIDEBAR) */
+        .sidebar {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100%;
+            background: white;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-header {
+            background: var(--secondary-color); color: white; padding: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sidebar-close-btn {
+            background: none; border: none; color: white; font-size: 22px; cursor: pointer;
+        }
+        
+        .groups-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .group-item {
+            padding: 14px 12px; border-bottom: 1px solid #f5f5f5; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 8px; transition: background 0.2s; margin-bottom: 4px;
+        }
+        .group-item:hover { background: #f0f2f5; }
+        .group-item.active-group { background: #e1f5fe; color: var(--primary-color); }
+        .group-name { font-weight: bold; font-size: 14px; }
+
+        .sidebar-footer {
+            padding: 12px; border-top: 1px solid #ddd; background: #f9f9f9;
+        }
+
+        .sidebar-overlay {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* VENTANAS MODALES EMERGENTES */
+        .modal-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 15; display: none; flex-direction: column;
+            box-sizing: border-box;
+        }
+        .modal-header {
+            background: var(--primary-color); color: white; padding: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-body { flex: 1; overflow-y: auto; padding: 15px; box-sizing: border-box; }
+
+        .members-checkboxes {
+            max-height: 200px; overflow-y: auto; background: white;
+            padding: 5px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 15px;
+        }
+        .member-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 4px; border-bottom: 1px solid #eee; font-size: 14px;
+        }
+
+        /* BUSCADOR Y ENTORNO DE EMOJIS */
+        .emoji-search {
+            width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px;
+        }
+        .emoji-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            gap: 6px; padding: 5px;
+        }
+        .emoji-item {
+            font-size: 26px; text-align: center; padding: 5px; cursor: pointer;
+            border-radius: 8px; transition: background 0.1s; user-select: none;
+        }
+        .emoji-item:hover { background: #e1f5fe; transform: scale(1.1); }
+        .emoji-category-title {
+            font-size: 13px; font-weight: bold; color: #666; margin: 15px 0 5px 0;
+            border-bottom: 1px solid #ddd; padding-bottom: 2px; clear: both;
+        }
+
+        /* CAJA DE MENSAJES */
+        .messages-box {
+            flex: 1; padding: 15px; overflow-y: auto;
+            background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px;
+        }
+        .placeholder-text {
+            text-align: center; color: #777; font-size: 14px; margin: auto; padding: 20px;
+        }
+        .date-divider {
+            align-self: center; background: rgba(225, 245, 254, 0.9);
+            color: #555; font-size: 11px; font-weight: 500;
+            padding: 4px 10px; border-radius: 7px; margin: 5px 0;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+        .msg {
+            max-width: 75%; padding: 6px 10px 20px 10px; border-radius: 8px;
+            font-size: 14px; position: relative; word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+        .msg .user-name { font-weight: bold; font-size: 11px; margin-bottom: 2px; display: block; color: var(--secondary-color); }
+        .msg .msg-time { position: absolute; bottom: 2px; right: 24px; font-size: 9px; color: #777; }
+        .msg .delete-icon {
+            position: absolute; bottom: 2px; right: 5px;
+            font-size: 11px; cursor: pointer; opacity: 0.6;
+        }
+        .msg .delete-icon:hover { opacity: 1; color: red; }
+        
+        .msg.sent { background: #dcf8c6; align-self: flex-end; }
+        .msg.received { background: #ffffff; align-self: flex-start; }
+        
+        /* ENTRADA DE TEXTO */
+        .input-area { display: flex; padding: 10px; background: #f0f0f0; z-index: 2; align-items: center; }
+        .input-area input { flex: 1; margin: 0; border-radius: 20px; padding: 12px 15px; border: 1px solid #ccc; font-size: 15px; }
+        .input-area button {
+            background: var(--primary-color); color: white; border: none;
+            padding: 12px 20px; margin-left: 6px; border-radius: 20px; cursor: pointer; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- PANTALLA 1: LOGIN -->
+    <div class="login-screen" id="scr-login">
+        <h2>Entrar a Chat-simple</h2>
+        <div class="error-msg" id="login-error">Contraseña incorrecta.</div>
+        <select id="login-user-select"></select>
+        <input type="password" id="login-password" placeholder="Tu código numérico" inputmode="numeric">
+        <button class="btn-primary" id="btn-login">Acceder</button>
+    </div>
+
+    <!-- PANTALLA 2: CHAT PRINCIPAL -->
+    <div class="chat-screen" id="scr-chat">
+        
+        <!-- MENÚ LATERAL (SIDEBAR) -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span style="font-weight:bold;">Mis Grupos Privados</span>
+                <button class="sidebar-close-btn" id="btn-close-sidebar">✕</button>
+            </div>
+            <div class="groups-list" id="groups-container"></div>
+            <div class="sidebar-footer">
+                <button class="btn-primary" id="open-modal-create" style="padding:10px; font-size:14px;">➕ Crear Nuevo Grupo</button>
+            </div>
+        </div>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- MODAL 1: CREAR GRUPO -->
+        <div class="modal-screen" id="modal-create-group">
+            <div class="modal-header">
+                <h3 style="margin:0;">Crear Grupo Nuevo</h3>
+                <button class="sidebar-close-btn" id="close-modal-create">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="new-group-name" placeholder="Nombre del grupo..." style="margin-bottom:15px;">
+                <div style="font-size:13px; color:#555; margin-bottom:5px; font-weight:bold;">Selecciona Integrantes y Administradores:</div>
+                <div class="members-checkboxes" id="checkboxes-container"></div>
+                <button class="btn-primary" id="btn-create-group">Confirmar y Crear Grupo</button>
+            </div>
+        </div>
+
+        <!-- MODAL 2: SELECCIÓN DE +1000 EMOJIS (AJUSTES) -->
+        <div class="modal-screen" id="modal-settings-group">
+            <div class="modal-header">
+                <h3 style="margin:0;">Cambiar Icono del Grupo</h3>
+                <button class="sidebar-close-btn" id="close-modal-settings">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="emoji-search" id="emoji-search-input" placeholder="🔍 Buscar emoji por nombre... (ej: cara, fuego, pelota)">
+                <div id="emoji-list-container"></div>
+            </div>
+        </div>
+
+        <!-- ENCABEZADO DE LA VENTANA DE CHAT -->
+        <div class="header">
+            <div class="header-left">
+                <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
+                <h3 id="txt-chat-title">Selecciona un grupo</h3>
+            </div>
+            <div class="header-actions">
+                <button class="btn-settings" id="btn-open-settings">⚙️ Ajustes</button>
+                <button class="btn-logout" id="btn-logout">Salir</button>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DE MENSAJES -->
+        <div class="messages-box" id="messages-box">
+            <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
+        </div>
+
+        <!-- SECCIÓN DE ENVIAR -->
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Escribe un mensaje..." autocomplete="off" disabled>
+            <button id="send-btn" disabled>Enviar</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getDatabase, ref, push, set, query, limitToLast, onValue, serverTimestamp, remove, update } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA9c-n55h_KnehEHMj4KoYL2IfZsQgp6hw",
+        authDomain: "simple-chat-online.firebaseapp.com",
+        databaseURL: "https://simple-chat-online-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "simple-chat-online",
+        storageBucket: "simple-chat-online.firebasestorage.app",
+        messagingSenderId: "920345106148",
+        appId: "1:920345106148:web:f74414f65478414c05bef1"
+    };
+
+    const usuariosPermitidos = {
+        "Saúl": "400568", "Rafa": "571968", "Pablo": "175380", "Helena": "572597",
+        "Martina": "643967", "Elsa": "753921", "Gabriel Conde": "784636", "Bosco": "930055",
+        "Claudia Flores": "067776", "Guillermo": "998899", "Alejandra": "465827", "Lucía": "894639",
+        "Xulia": "905667", "Gabriel Iglesias": "596839", "Gianluca": "684757", "Lía": "573659",
+        "Paula": "978563", "Claudia Martinez": "898989", "Marta": "676767", "Mateo": "066287",
+        "Alba": "673569", "Nicolás": "506816", "Gonzalo": "673951", "Antía": "019452",
+        "Violetta": "019283", "Sergio": "102936", "Catalina": "673659", "Alejandro": "673659",
+        "Fabio": "918273", "Kiara": "900563"
+    };
+
+    const bloquesEmoji = [
+        { cat: "Caras y Personas", start: 0x1F600, end: 0x1F64F },
+        { cat: "Gestos y Cuerpo", start: 0x1F440, end: 0x1F49F },
+        { cat: "Fantasía y Ropa", start: 0x1F910, end: 0x1F96B },
+        { cat: "Animales y Naturaleza", start: 0x1F400, end: 0x1F4D6 },
+        { cat: "Comida y Bebida", start: 0x1F340, end: 0x1F37F },
+        { cat: "Deportes y Ocio", start: 0x1F380, end: 0x1F3C4 },
+        { cat: "Viajes y Lugares", start: 0x1F300, end: 0x1F32F },
+        { cat: "Objetos y Herramientas", start: 0x1F4E0, end: 0x1F53D },
+        { cat: "Símbolos y Banderas", start: 0x1F680, end: 0x1F6C5 }
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let currentUser = "";
+    let activeGroupId = "";
+    let chatListener = null;
+    let cacheGrupos = {};
+    let listaCompletaEmojis = [];
+
+    const scrLogin = document.getElementById('scr-login');
+    const scrChat = document.getElementById('scr-chat');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const groupsContainer = document.getElementById('groups-container');
+    const messagesBox = document.getElementById('messages-box');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const txtChatTitle = document.getElementById('txt-chat-title');
+    const btnOpenSettings = document.getElementById('btn-open-settings');
+
+    const modalCreate = document.getElementById('modal-create-group');
+    const modalSettings = document.getElementById('modal-settings-group');
+
+    function initUI() {
+        Object.keys(usuariosPermitidos).forEach(nombre => {
+            let opt = document.createElement('option');
+            opt.value = nombre; opt.textContent = nombre;
+            document.getElementById('login-user-select').appendChild(opt);
+
+            let row = document.createElement('div');
+            row.className = 'member-row';
+            row.innerHTML = `
+                <label><input type="checkbox" value="${nombre}" class="chk-member"> ${nombre}</label>
+                <label style="color:#888;"><input type="checkbox" value="${nombre}" class="chk-host"> Admin</label>
+            `;
+            document.getElementById('checkboxes-container').appendChild(row);
+        });
+        generarBancoEmojis();
+    }
+
+    function generarBancoEmojis() {
+        bloquesEmoji.forEach(bloque => {
+            for (let i = bloque.start; i <= bloque.end; i++) {
+                let emoji = String.fromCodePoint(i);
+                listaCompletaEmojis.push({ char: emoji, cat: bloque.cat });
+            }
+        });
+        renderizarEmojis(listaCompletaEmojis);
+    }
+
+    function renderizarEmojis(lista) {
+        const contenedor = document.getElementById('emoji-list-container');
+        contenedor.innerHTML = "";
+        
+        let categoriasAgrupadas = {};
+        lista.forEach(item => {
+            if (!categoriasAgrupadas[item.cat]) categoriasAgrupadas[item.cat] = [];
+            categoriasAgrupadas[item.cat].push(item.char);
+        });
+
+        for (let cat in categoriasAgrupadas) {
+            let titulo = document.createElement('div');
+            titulo.className = 'emoji-category-title';
+            titulo.textContent = cat;
+            contenedor.appendChild(titulo);
+
+            let grid = document.createElement('div');
+            grid.className = 'emoji-grid';
+
+            categoriasAgrupadas[cat].forEach(emoji => {
+                let span = document.createElement('span');
+                span.className = 'emoji-item';
+                span.textContent = emoji;
+                span.addEventListener('click', () => cambiarIconoGrupoFirebase(emoji));
+                grid.appendChild(span);
+            });
+            contenedor.appendChild(grid);
+        }
+    }
+
+    document.getElementById('emoji-search-input').addEventListener('input', (e) => {
+        let busqueda = e.target.value.toLowerCase();
+        if(!busqueda) {
+            renderizarEmojis(listaCompletaEmojis);
+            return;
+        }
+        let filtrados = listaCompletaEmojis.filter(item => item.cat.toLowerCase().includes(busqueda) || item.char.includes(busqueda));
+        renderizarEmojis(filtrados);
+    });
+
+    async function verficarChatGrupalPermanente() {
+        const globalGroupRef = ref(db, 'groups/chat_grupal_fijo');
+        let membersGlobales = {};
+        Object.keys(usuariosPermitidos).forEach(user => { membersGlobales[user] = true; });
+        let hostsGlobales = { "Saúl": true };
+
+        await set(globalGroupRef, {
+            name: "Chat Grupal",
+            icon: "🌍",
+            members: membersGlobales,
+            hosts: hostsGlobales
+        });
+    }
+
+    function toggleSidebar(open) {
+        if(open) { sidebar.classList.add('open'); sidebarOverlay.classList.add('show'); } 
+        else { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('show'); }
+    }
+    document.getElementById('btn-open-sidebar').addEventListener('click', () => toggleSidebar(true));
+    document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
+    sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
+    document.getElementById('open-modal-create').addEventListener('click', () => { toggleSidebar(false); modalCreate.style.display = "flex"; });
+    document.getElementById('close-modal-create').addEventListener('click', () => { modalCreate.style.display = "none"; });
+    btnOpenSettings.addEventListener('click', () => { modalSettings.style.display = "flex"; });
+    document.getElementById('close-modal-settings').addEventListener('click', () => { modalSettings.style.display = "none"; });
+
+    initUI();
+
+    // LOGIN
+    document.getElementById('btn-login').addEventListener('click', async () => {
+        const user = document.getElementById('login-user-select').value;
+        const pass = document.getElementById('login-password').value.trim();
+
+        if (usuariosPermitidos[user] === pass) {
+            currentUser = user;
+            document.getElementById('login-password').value = "";
+            document.getElementById('login-error').style.display = "none";
+            
+            await verficarChatGrupalPermanente();
+
+            scrLogin.style.display = "none";
+            scrChat.style.display = "flex";
+            listenToGroups();
+            toggleSidebar(true);
+        } else {
+            document.getElementById('login-error').style.display = "block";
+        }
+    });
+
+    // ESCUCHAR GRUPOS
+    function listenToGroups() {
+        const groupsRef = ref(db, 'groups');
+        onValue(groupsRef, (snapshot) => {
+            groupsContainer.innerHTML = "";
+            cacheGrupos = {};
+
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const groupId = child.key;
+                    const groupData = child.val();
+                    cacheGrupos[groupId] = groupData;
+
+                    if (groupData.members && groupData.members[currentUser]) {
+                        let div = document.createElement('div');
+                        div.className = `group-item ${groupId === activeGroupId ? 'active-group' : ''}`;
+                        let emojiIcon = groupData.icon || "💬";
+                        div.innerHTML = `<span class="group-name">${emojiIcon} ${groupData.name}</span>`;
+                        div.addEventListener('click', () => {
+                            toggleSidebar(false);
+                            openChat(groupId, `${emojiIcon} ${groupData.name}`);
+                        });
+                        groupsContainer.appendChild(div);
+                    }
+                });
+            }
+        });
+    }
+
+    // CREAR GRUPO
+    document.getElementById('btn-create-group').addEventListener('click', async () => {
+        const groupName = document.getElementById('new-group-name').value.trim();
+        if (!groupName) return alert("Escribe el nombre del grupo");
+        if (groupName.toLowerCase() === "chat grupal") return alert("El 'Chat Grupal' principal ya está creado.");
+
+        let members = {};
+        let hosts = {};
+        members[currentUser] = true;
+
+        document.querySelectorAll('.member-row').forEach(row => {
+            const chkMember = row.querySelector('.chk-member');
+            const chkHost = row.querySelector('.chk-host');
+            if(chkMember.checked) {
+                members[chkMember.value] = true;
+                if(chkHost.checked) hosts[chkHost.value] = true;
+            }
+        });
+
+        try {
+            const newGroupRef = push(ref(db, 'groups'));
+            await set(newGroupRef, { 
+                name: groupName, 
+                icon: "💬", 
+                members: members,
+                hosts: hosts
+            });
+            
+            document.getElementById('new-group-name').value = "";
+            document.querySelectorAll('.chk-member, .chk-host').forEach(chk => chk.checked = false);
+            modalCreate.style.display = "none";
+        } catch(e) { console.error(e); }
+    });
+
+    // CAMBIAR ICONO EMOJI
+    async function cambiarIconoGrupoFirebase(emojiElegido) {
+        if(!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
+        try {
+            const groupRef = ref(db, `groups/${activeGroupId}`);
+            await update(groupRef, { icon: emojiElegido });
+            modalSettings.style.display = "none";
+            txtChatTitle.textContent = `${emojiElegido} ${cacheGrupos[activeGroupId].name}`;
+        } catch(e) { console.error(e); }
+    }
+
+    // ABRIR CHAT
+    function openChat(groupId, groupFullName) {
+        activeGroupId = groupId;
+        txtChatTitle.textContent = groupFullName;
+        
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+
+        const infoGrupo = cacheGrupos[groupId] || {};
+        const misAnfitriones = infoGrupo.hosts || {};
+        const soyAnfitrion = misAnfitriones[currentUser] === true;
+
+        if(groupId !== 'chat_grupal_fijo' && soyAnfitrion) {
+            btnOpenSettings.style.display = "block";
+        } else {
+            btnOpenSettings.style.display = "none";
+        }
+
+        if (chatListener) chatListener();
+
+        const messagesRef = query(ref(db, `groups/${groupId}/messages`), limitToLast(100));
+        let lastRenderedDate = "";
+
+        chatListener = onValue(messagesRef, (snapshot) => {
+            messagesBox.innerHTML = "";
+            lastRenderedDate = "";
+
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const msgId = child.key;
+                    const data = child.val();
+                    
+                    const date = new Date(data.timestamp);
+                    const dayStr = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+                    if (dayStr && dayStr !== lastRenderedDate) {
+                        let divider = document.createElement('div');
+                        divider.className = 'date-divider';
+                        divider.textContent = dayStr;
+                        messagesBox.appendChild(divider);
+                        lastRenderedDate = dayStr;
+                    }
+
+                    const isMe = data.user === currentUser ? 'sent' : 'received';
+                    let msgDiv = document.createElement('div');
+                    msgDiv.className = `msg ${isMe}`;
+                    
+                    const elRemitenteEsAnfitrion = misAnfitriones[data.user] === true;
+                    const tagAnfitrion = elRemitenteEsAnfitrion ? ' <span style="color:#d32f2f; font-size:9px; font-weight:bold;">[Anfitrión]</span>' : '';
+
+                    let timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+                    msgDiv.innerHTML = `
+                        <span class="user-name">${data.user}${tagAnfitrion}</span>
+                        ${data.text}
+                        <span class="msg-time">${timeStr}</span>
+                    `;
+
+                    if (groupId !== 'chat_grupal_fijo' && (data.user === currentUser || soyAnfitrion)) {
+                        let deleteIcon = document.createElement('span');
+                        deleteIcon.className = 'delete-icon';
+                        deleteIcon.innerHTML = '🗑️';
+                        deleteIcon.addEventListener('click', () => {
+                            if(confirm("¿Seguro que deseas eliminar este mensaje?")) {
+                                remove(ref(db, `groups/${groupId}/messages/${msgId}`));
+                            }
+                        });
+                        msgDiv.appendChild(deleteIcon);
+                    }
+                    messagesBox.appendChild(msgDiv);
+                });
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            } else {
+                messagesBox.innerHTML = `<div class="placeholder-text">Este grupo no tiene mensajes aún.</div>`;
+            }
+        });
+    }
+
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !activeGroupId) return;
+        try {
+            await push(ref(db, `groups/${activeGroupId}/messages`), {
+                user: currentUser,
+                text: text,
+                timestamp: serverTimestamp()
+            });
+            messageInput.value = "";
+            messageInput.focus();
+        } catch(e) { console.error(e); }
+    }
+
+    // SALIR
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        if (chatListener) chatListener();
+        currentUser = ""; activeGroupId = "";
+        messageInput.disabled = true; sendBtn.disabled = true; messageInput.value = "";
+        txtChatTitle.textContent = "Selecciona un grupo";
+        btnOpenSettings.style.display = "none";
+        messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
+        toggleSidebar(false);
+        scrChat.style.display = "none"; scrLogin.style.display = "flex";
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+</script>
+
+</body>
+</html>
