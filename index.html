@@ -25,7 +25,7 @@
             overflow: hidden;
         }
         
-        /* Contenedor Adaptable e Interfaz Líquida */
+        /* Contenedor Adaptable */
         .app-container {
             width: 100%;
             height: 100%;
@@ -51,25 +51,72 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding: 30px;
+            padding: 25px;
             text-align: center;
             justify-content: center;
             box-sizing: border-box;
             background: white;
             z-index: 20;
         }
-        .login-screen h2 { color: var(--primary-color); margin-top: 0; }
-        select, input {
+        .login-screen h2 { color: var(--primary-color); margin-top: 0; margin-bottom: 5px; }
+        .login-subtitle { font-size: 14px; color: #666; margin-bottom: 15px; }
+
+        /* CUADRÍCULA DE SELECCIÓN DE USUARIOS */
+        .login-users-container {
+            max-height: 240px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: #fafafa;
+            box-sizing: border-box;
+        }
+        .login-users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+        .login-user-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .login-user-card:hover {
+            background: #e1f5fe;
+            transform: translateY(-2px);
+        }
+        .login-user-card.selected {
+            border-color: var(--primary-color);
+            background: #e1f5fe;
+        }
+        .login-user-avatar { font-size: 28px; margin-bottom: 4px; user-select: none; }
+        .login-user-name {
+            font-size: 12px; font-weight: bold; color: #333; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+
+        input {
             width: 100%; padding: 12px; margin: 10px 0;
             border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px;
         }
+        input:disabled { background-color: #f0f0f0; color: #777; cursor: not-allowed; }
+
         .btn-primary {
             width: 100%; background: var(--primary-color); color: white; border: none;
             padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold;
             transition: background 0.2s;
         }
         .btn-primary:hover { background: var(--secondary-color); }
-        .error-msg { color: red; font-size: 14px; display: none; margin-bottom: 10px; }
+        .error-msg { color: red; font-size: 14px; display: none; margin-bottom: 10px; font-weight: 500; }
 
         /* INTERFAZ DE CHAT PRINCIPAL */
         .chat-screen {
@@ -143,6 +190,7 @@
 
         .sidebar-footer {
             padding: 12px; border-top: 1px solid #ddd; background: #f9f9f9;
+            display: flex; flex-direction: column; gap: 8px;
         }
 
         .sidebar-overlay {
@@ -172,32 +220,25 @@
             padding: 6px 4px; border-bottom: 1px solid #eee; font-size: 14px;
         }
 
+        /* AJUSTES ADMINISTRADOR */
+        .admin-section-title { font-size: 14px; font-weight: bold; margin: 15px 0 5px 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 3px; }
+        .manage-member-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-small-add { background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-small-kick { background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
         /* BUSCADOR Y ENTORNO DE EMOJIS */
-        .emoji-search {
-            width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px;
-        }
-        .emoji-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-            gap: 6px; padding: 5px;
-        }
-        .emoji-item {
-            font-size: 26px; text-align: center; padding: 5px; cursor: pointer;
-            border-radius: 8px; transition: background 0.1s; user-select: none;
-        }
+        .emoji-search { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
+        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 6px; padding: 5px; }
+        .emoji-item { font-size: 26px; text-align: center; padding: 5px; cursor: pointer; border-radius: 8px; transition: background 0.1s; user-select: none; }
         .emoji-item:hover { background: #e1f5fe; transform: scale(1.1); }
-        .emoji-category-title {
-            font-size: 13px; font-weight: bold; color: #666; margin: 15px 0 5px 0;
-            border-bottom: 1px solid #ddd; padding-bottom: 2px; clear: both;
-        }
+        .emoji-category-title { font-size: 13px; font-weight: bold; color: #666; margin: 15px 0 5px 0; border-bottom: 1px solid #ddd; padding-bottom: 2px; clear: both; }
 
         /* CAJA DE MENSAJES */
         .messages-box {
             flex: 1; padding: 15px; overflow-y: auto;
             background: var(--chat-bg); display: flex; flex-direction: column; gap: 10px;
         }
-        .placeholder-text {
-            text-align: center; color: #777; font-size: 14px; margin: auto; padding: 20px;
-        }
+        .placeholder-text { text-align: center; color: #777; font-size: 14px; margin: auto; padding: 20px; }
         .date-divider {
             align-self: center; background: rgba(225, 245, 254, 0.9);
             color: #555; font-size: 11px; font-weight: 500;
@@ -209,7 +250,7 @@
             font-size: 14px; position: relative; word-wrap: break-word;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
-        .msg .user-name { font-weight: bold; font-size: 11px; margin-bottom: 2px; display: block; color: var(--secondary-color); }
+        .msg .user-name { font-weight: bold; font-size: 11px; margin-bottom: 2px; display: block; color: var(--secondary-color); cursor: pointer; text-decoration: underline; }
         .msg .msg-time { position: absolute; bottom: 2px; right: 24px; font-size: 9px; color: #777; }
         .msg .delete-icon {
             position: absolute; bottom: 2px; right: 5px;
@@ -233,32 +274,35 @@
 
 <div class="app-container">
 
-    <!-- PANTALLA 1: LOGIN -->
     <div class="login-screen" id="scr-login">
         <h2>Entrar a Chat-simple</h2>
-        <div class="error-msg" id="login-error">Contraseña incorrecta.</div>
-        <select id="login-user-select"></select>
-        <input type="password" id="login-password" placeholder="Tu código numérico" inputmode="numeric">
+        <div class="login-subtitle">Selecciona tu usuario para acceder:</div>
+        <div class="error-msg" id="login-error">Contraseña incorrecta o usuario no seleccionado.</div>
+        
+        <div class="login-users-container">
+            <div class="login-users-grid" id="login-users-grid"></div>
+        </div>
+
+        <input type="password" id="login-password" placeholder="Contraseña" inputmode="numeric">
         <button class="btn-primary" id="btn-login">Acceder</button>
     </div>
 
-    <!-- PANTALLA 2: CHAT PRINCIPAL -->
     <div class="chat-screen" id="scr-chat">
         
-        <!-- MENÚ LATERAL (SIDEBAR) -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span style="font-weight:bold;">Mis Grupos Privados</span>
                 <button class="sidebar-close-btn" id="btn-close-sidebar">✕</button>
             </div>
             <div class="groups-list" id="groups-container"></div>
+            
             <div class="sidebar-footer">
+                <button class="btn-primary" id="open-modal-my-profile" style="padding:10px; font-size:14px; background-color: var(--secondary-color);">👤 Ajustes de Mi Perfil</button>
                 <button class="btn-primary" id="open-modal-create" style="padding:10px; font-size:14px;">➕ Crear Nuevo Grupo</button>
             </div>
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-        <!-- MODAL 1: CREAR GRUPO -->
         <div class="modal-screen" id="modal-create-group">
             <div class="modal-header">
                 <h3 style="margin:0;">Crear Grupo Nuevo</h3>
@@ -272,19 +316,89 @@
             </div>
         </div>
 
-        <!-- MODAL 2: SELECCIÓN DE +1000 EMOJIS (AJUSTES) -->
         <div class="modal-screen" id="modal-settings-group">
             <div class="modal-header">
-                <h3 style="margin:0;">Cambiar Icono del Grupo</h3>
+                <h3 style="margin:0;" id="settings-modal-title">Ajustes del Grupo</h3>
                 <button class="sidebar-close-btn" id="close-modal-settings">✕</button>
             </div>
             <div class="modal-body">
-                <input type="text" class="emoji-search" id="emoji-search-input" placeholder="🔍 Buscar emoji por nombre... (ej: cara, fuego, pelota)">
-                <div id="emoji-list-container"></div>
+                
+                <div class="admin-section-title">Nombre del Grupo</div>
+                <div style="display:flex; gap:10px; margin-bottom: 15px;">
+                    <input type="text" id="edit-group-name" placeholder="Nombre..." style="margin:0;">
+                    <button class="btn-primary" id="btn-save-group-name" style="width:auto; padding: 10px;">Guardar</button>
+                </div>
+
+                <div id="wrapper-emoji-selection">
+                    <div class="admin-section-title">Cambiar Icono (Emoji)</div>
+                    <input type="text" class="emoji-search" id="emoji-search-input" placeholder="🔍 Buscar emoji...">
+                    <div id="emoji-list-container" style="max-height: 140px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; margin-bottom:15px; background:#fafafa;"></div>
+                </div>
+
+                <div class="admin-section-title" id="lbl-members-title">Integrantes</div>
+                <div id="admin-members-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; padding:5px; background:#fafafa;"></div>
+
             </div>
         </div>
 
-        <!-- ENCABEZADO DE LA VENTANA DE CHAT -->
+        <div class="modal-screen" id="modal-user-profile">
+            <div class="modal-header">
+                <h3 style="margin:0;">Perfil de Usuario</h3>
+                <button class="sidebar-close-btn" id="close-modal-profile">✕</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div id="prof-avatar" style="font-size: 65px; margin: 20px 0 10px 0; user-select: none;">👤</div>
+                <h2 id="prof-name" style="margin: 0 0 5px 0; color: var(--primary-color);">Nombre</h2>
+                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:20px;">Miembro del sistema</div>
+                
+                <div class="admin-section-title" style="text-align: left;">Grupos en común</div>
+                <div id="prof-common-groups" style="text-align: left; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; max-height: 220px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <div class="modal-screen" id="modal-my-profile">
+            <div class="modal-header">
+                <h3 style="margin:0;">Ajustes de mi Perfil</h3>
+                <button class="sidebar-close-btn" id="close-modal-my-profile">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="admin-section-title">Mis Datos de Acceso</div>
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555;">Nombre de Usuario (Bloqueado):</label>
+                <input type="text" id="my-profile-name" disabled>
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Cambiar Contraseña (Exactamente 6 números):</label>
+                <input type="password" id="my-profile-pass" placeholder="Ej: 123456" maxlength="6" inputmode="numeric">
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Cambiar mi Emoji / Icono:</label>
+                <input type="text" id="my-profile-emoji" placeholder="Ej: 🦊" style="font-size: 22px; text-align: center; width: 80px; margin: 5px auto; display: block;">
+
+                <button class="btn-primary" id="btn-save-my-profile" style="margin-top: 20px;">Guardar Cambios</button>
+            </div>
+        </div>
+
+        <div class="modal-screen" id="modal-recovery-panel">
+            <div class="modal-header">
+                <h3 style="margin:0;">Panel de Recuperación Maestro</h3>
+                <button class="sidebar-close-btn" id="close-modal-recovery">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="admin-section-title" style="margin-top:0;">Forzar Modificación de Credenciales</div>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Has accedido usando la clave maestra de recuperación:</p>
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555;">Nombre de Usuario:</label>
+                <input type="text" id="rec-username" placeholder="Nombre...">
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Contraseña (Exactamente 6 números):</label>
+                <input type="text" id="rec-password" placeholder="Contraseña de 6 cifras..." maxlength="6" inputmode="numeric">
+                
+                <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Emoji / Icono Personal:</label>
+                <input type="text" id="rec-emoji" placeholder="Ej: 🐺" style="font-size: 22px; text-align: center;">
+                
+                <button class="btn-primary" id="btn-save-recovery" style="margin-top: 20px; background-color: #d32f2f;">Actualizar Cuenta en Firebase</button>
+            </div>
+        </div>
+
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
@@ -296,12 +410,10 @@
             </div>
         </div>
 
-        <!-- CONTENEDOR DE MENSAJES -->
         <div class="messages-box" id="messages-box">
             <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
         </div>
 
-        <!-- SECCIÓN DE ENVIAR -->
         <div class="input-area">
             <input type="text" id="message-input" placeholder="Escribe un mensaje..." autocomplete="off" disabled>
             <button id="send-btn" disabled>Enviar</button>
@@ -325,7 +437,7 @@
         appId: "1:920345106148:web:f74414f65478414c05bef1"
     };
 
-    const usuariosPermitidos = {
+    const usuariosPermitidosPredefinidos = {
         "Saúl": "400568", "Rafa": "571968", "Pablo": "175380", "Helena": "572597",
         "Martina": "643967", "Elsa": "753921", "Gabriel Conde": "784636", "Bosco": "930055",
         "Claudia Flores": "067776", "Guillermo": "998899", "Alejandra": "465827", "Lucía": "894639",
@@ -355,7 +467,10 @@
     let activeGroupId = "";
     let chatListener = null;
     let cacheGrupos = {};
+    let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
+    let nombreUsuarioEnRecuperacion = ""; 
+    let selectedUserLogin = ""; 
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -370,27 +485,198 @@
 
     const modalCreate = document.getElementById('modal-create-group');
     const modalSettings = document.getElementById('modal-settings-group');
+    const modalProfile = document.getElementById('modal-user-profile');
+    const modalMyProfile = document.getElementById('modal-my-profile');
+    const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
 
     function initUI() {
-        Object.keys(usuariosPermitidos).forEach(nombre => {
-            let opt = document.createElement('option');
-            opt.value = nombre; opt.textContent = nombre;
-            document.getElementById('login-user-select').appendChild(opt);
+        generarBancoEmojis();
+        sincronizarYEscucharUsuarios();
+    }
 
+    function sincronizarYEscucharUsuarios() {
+        const usersRef = ref(db, 'users');
+        onValue(usersRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                const inicialBD = {};
+                const avatars = ["🦊", "🦁", "🐯", "🐱", "🐨", "🐼", "🐵", "🦄", "🦅", "🦉", "🐺", "🐸"];
+                Object.keys(usuariosPermitidosPredefinidos).forEach(nombre => {
+                    const idx = nombre.charCodeAt(0) % avatars.length;
+                    inicialBD[nombre] = {
+                        password: usuariosPermitidosPredefinidos[nombre],
+                        emoji: avatars[idx]
+                    };
+                });
+                set(usersRef, inicialBD);
+            } else {
+                cacheUsuarios = snapshot.val();
+                renderLoginUsersGrid();
+            }
+        });
+    }
+
+    function renderLoginUsersGrid() {
+        const gridContainer = document.getElementById('login-users-grid');
+        gridContainer.innerHTML = "";
+
+        Object.keys(cacheUsuarios).forEach(nombre => {
+            const userData = cacheUsuarios[nombre];
+            const card = document.createElement('div');
+            card.className = `login-user-card ${nombre === selectedUserLogin ? 'selected' : ''}`;
+            
+            card.innerHTML = `
+                <div class="login-user-avatar">${userData.emoji || '👤'}</div>
+                <div class="login-user-name">${nombre}</div>
+            `;
+
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.login-user-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedUserLogin = nombre;
+                document.getElementById('login-error').style.display = "none";
+            });
+
+            gridContainer.appendChild(card);
+        });
+    }
+
+    async function procesarCambioNombreUsuario(nombreViejo, nombreNuevo, nuevosDatosCuenta) {
+        if (!nombreViejo || !nombreNuevo) return;
+        
+        await set(ref(db, `users/${nombreNuevo}`), nuevosDatosCuenta);
+        
+        if (nombreViejo !== nombreNuevo) {
+            await remove(ref(db, `users/${nombreViejo}`));
+            
+            for (let gId in cacheGrupos) {
+                const grupo = cacheGrupos[gId];
+                let batch = {};
+                let requiereCambio = false;
+
+                if (grupo.members && grupo.members[nombreViejo]) {
+                    batch[`groups/${gId}/members/${nombreNuevo}`] = true;
+                    batch[`groups/${gId}/members/${nombreViejo}`] = null;
+                    requiereCambio = true;
+                }
+                if (grupo.hosts && grupo.hosts[nombreViejo]) {
+                    batch[`groups/${gId}/hosts/${nombreNuevo}`] = true;
+                    batch[`groups/${gId}/hosts/${nombreViejo}`] = null;
+                    requiereCambio = true;
+                }
+                if (requiereCambio) {
+                    await update(ref(db), batch);
+                }
+            }
+        }
+        
+        if (currentUser === nombreViejo) currentUser = nombreNuevo;
+        if (selectedUserLogin === nombreViejo) selectedUserLogin = nombreNuevo;
+    }
+
+    function renderCreateGroupMembers() {
+        const container = document.getElementById('checkboxes-container');
+        container.innerHTML = "";
+        Object.keys(cacheUsuarios).forEach(nombre => {
+            if (nombre === currentUser) return; 
+            
             let row = document.createElement('div');
             row.className = 'member-row';
             row.innerHTML = `
                 <label><input type="checkbox" value="${nombre}" class="chk-member"> ${nombre}</label>
                 <label style="color:#888;"><input type="checkbox" value="${nombre}" class="chk-host"> Admin</label>
             `;
-            document.getElementById('checkboxes-container').appendChild(row);
+            container.appendChild(row);
         });
-        generarBancoEmojis();
+    }
+
+    function renderAdminMembers(soyAnfitrion) {
+        const container = document.getElementById('admin-members-list');
+        container.innerHTML = "";
+        
+        const infoGrupo = cacheGrupos[activeGroupId] || {};
+        const members = infoGrupo.members || {};
+        const hosts = infoGrupo.hosts || {};
+
+        Object.keys(cacheUsuarios).forEach(nombre => {
+            let isMember = members[nombre] === true;
+            let isHost = hosts[nombre] === true;
+            
+            if (!soyAnfitrion && !isMember) return;
+
+            let row = document.createElement('div');
+            row.className = 'manage-member-row';
+            let tagRole = isHost ? ' <span style="color:#d32f2f; font-size:11px; font-weight:bold;">[Anfitrión]</span>' : '';
+            
+            if (soyAnfitrion) {
+                if (nombre === currentUser) {
+                    row.innerHTML = `<span>👤 <b>${nombre}</b> ${tagRole}</span> <span style="font-size:12px; color:#777;">Tú</span>`;
+                } else if (isMember) {
+                    row.innerHTML = `<span>👤 ${nombre} ${tagRole}</span> <button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
+                } else {
+                    row.innerHTML = `<span>👤 ${nombre}</span> <button class="btn-small-add" data-user="${nombre}">➕ Añadir</button>`;
+                }
+            } else {
+                row.innerHTML = `<span>👤 ${nombre} ${tagRole}</span>`;
+            }
+            container.appendChild(row);
+        });
+
+        if (soyAnfitrion) {
+            container.querySelectorAll('.btn-small-kick').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const userToKick = e.target.getAttribute('data-user');
+                    if(confirm(`¿Expulsar a ${userToKick} del grupo?`)) {
+                        await remove(ref(db, `groups/${activeGroupId}/members/${userToKick}`));
+                        if(cacheGrupos[activeGroupId].members) delete cacheGrupos[activeGroupId].members[userToKick];
+                        renderAdminMembers(true); 
+                    }
+                });
+            });
+
+            container.querySelectorAll('.btn-small-add').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const userToAdd = e.target.getAttribute('data-user');
+                    await update(ref(db, `groups/${activeGroupId}/members`), { [userToAdd]: true });
+                    if(!cacheGrupos[activeGroupId].members) cacheGrupos[activeGroupId].members = {};
+                    cacheGrupos[activeGroupId].members[userToAdd] = true;
+                    renderAdminMembers(true); 
+                });
+            });
+        }
+    }
+
+    function openUserProfile(targetUser) {
+        document.getElementById('prof-name').textContent = targetUser;
+        const datosUser = cacheUsuarios[targetUser] || {};
+        document.getElementById('prof-avatar').textContent = datosUser.emoji || "👤";
+
+        const listContainer = document.getElementById('prof-common-groups');
+        listContainer.innerHTML = "";
+
+        let cont = 0;
+        Object.keys(cacheGrupos).forEach(gId => {
+            const grupo = cacheGrupos[gId];
+            if (grupo.members && grupo.members[currentUser] && grupo.members[targetUser]) {
+                cont++;
+                let icon = grupo.icon || "💬";
+                let item = document.createElement('div');
+                item.style.padding = "6px 0";
+                item.style.borderBottom = "1px dashed #eee";
+                item.style.fontSize = "14px";
+                item.innerHTML = `<b>${icon}</b> ${grupo.name}`;
+                listContainer.appendChild(item);
+            }
+        });
+
+        if (cont === 0) {
+            listContainer.innerHTML = `<span style="color:#777; font-size:13px;">Ningún grupo en común.</span>`;
+        }
+        modalProfile.style.display = "flex";
     }
 
     function generarBancoEmojis() {
         bloquesEmoji.forEach(bloque => {
-            for (let i = bloque.start; i <= bloque.end; i++) {
+            for (let i = Math.min(bloque.start, bloque.end); i <= Math.max(bloque.start, bloque.end); i++) {
                 let emoji = String.fromCodePoint(i);
                 listaCompletaEmojis.push({ char: emoji, cat: bloque.cat });
             }
@@ -404,8 +690,9 @@
         
         let categoriasAgrupadas = {};
         lista.forEach(item => {
-            if (!categoriasAgrupadas[item.cat]) categoriasAgrupadas[item.cat] = [];
-            categoriasAgrupadas[item.cat].push(item.char);
+            let categoria = item.cat || "Emojis";
+            if (!categoriasAgrupadas[categoria]) categoriasAgrupadas[categoria] = [];
+            categoriasAgrupadas[categoria].push(item.char);
         });
 
         for (let cat in categoriasAgrupadas) {
@@ -430,18 +717,15 @@
 
     document.getElementById('emoji-search-input').addEventListener('input', (e) => {
         let busqueda = e.target.value.toLowerCase();
-        if(!busqueda) {
-            renderizarEmojis(listaCompletaEmojis);
-            return;
-        }
-        let filtrados = listaCompletaEmojis.filter(item => item.cat.toLowerCase().includes(busqueda) || item.char.includes(busqueda));
+        if(!busqueda) { renderizarEmojis(listaCompletaEmojis); return; }
+        let filtrados = listaCompletaEmojis.filter(item => (item.cat && item.cat.toLowerCase().includes(busqueda)) || item.char.includes(busqueda));
         renderizarEmojis(filtrados);
     });
 
     async function verficarChatGrupalPermanente() {
         const globalGroupRef = ref(db, 'groups/chat_grupal_fijo');
         let membersGlobales = {};
-        Object.keys(usuariosPermitidos).forEach(user => { membersGlobales[user] = true; });
+        Object.keys(cacheUsuarios).forEach(user => { membersGlobales[user] = true; });
         let hostsGlobales = { "Saúl": true };
 
         await set(globalGroupRef, {
@@ -460,19 +744,162 @@
     document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
     sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
-    document.getElementById('open-modal-create').addEventListener('click', () => { toggleSidebar(false); modalCreate.style.display = "flex"; });
+    document.getElementById('open-modal-create').addEventListener('click', () => { 
+        toggleSidebar(false); 
+        renderCreateGroupMembers();
+        modalCreate.style.display = "flex"; 
+    });
+
+    document.getElementById('open-modal-my-profile').addEventListener('click', () => {
+        toggleSidebar(false);
+        const misDatos = cacheUsuarios[currentUser] || {};
+        document.getElementById('my-profile-name').value = currentUser;
+        document.getElementById('my-profile-pass').value = misDatos.password || "";
+        document.getElementById('my-profile-emoji').value = misDatos.emoji || "👤";
+        modalMyProfile.style.display = "flex";
+    });
+
     document.getElementById('close-modal-create').addEventListener('click', () => { modalCreate.style.display = "none"; });
-    btnOpenSettings.addEventListener('click', () => { modalSettings.style.display = "flex"; });
+    document.getElementById('close-modal-profile').addEventListener('click', () => { modalProfile.style.display = "none"; });
     document.getElementById('close-modal-settings').addEventListener('click', () => { modalSettings.style.display = "none"; });
+    document.getElementById('close-modal-my-profile').addEventListener('click', () => { modalMyProfile.style.display = "none"; });
+    document.getElementById('close-modal-recovery').addEventListener('click', () => { modalRecoveryPanel.style.display = "none"; });
+
+    btnOpenSettings.addEventListener('click', () => { 
+        const infoGrupo = cacheGrupos[activeGroupId] || {};
+        const misAnfitriones = infoGrupo.hosts || {};
+        const soyAnfitrion = misAnfitriones[currentUser] === true;
+
+        const inputName = document.getElementById('edit-group-name');
+        const btnSaveName = document.getElementById('btn-save-group-name');
+        const wrapperEmoji = document.getElementById('wrapper-emoji-selection');
+
+        inputName.value = infoGrupo.name || "";
+
+        if (soyAnfitrion && activeGroupId !== 'chat_grupal_fijo') {
+            document.getElementById('settings-modal-title').textContent = "Gestionar Grupo (Admin)";
+            inputName.disabled = false;
+            btnSaveName.style.display = "block";
+            wrapperEmoji.style.display = "block";
+            document.getElementById('lbl-members-title').textContent = "Gestionar Miembros (Añadir/Expulsar)";
+            renderAdminMembers(true);
+        } else {
+            document.getElementById('settings-modal-title').textContent = "Información del Grupo";
+            inputName.disabled = true;
+            btnSaveName.style.display = "none";
+            wrapperEmoji.style.display = "none";
+            document.getElementById('lbl-members-title').textContent = "Lista de Integrantes";
+            renderAdminMembers(false);
+        }
+
+        modalSettings.style.display = "flex"; 
+    });
+
+    document.getElementById('btn-save-group-name').addEventListener('click', async () => {
+        const newName = document.getElementById('edit-group-name').value.trim();
+        if(!newName || !activeGroupId) return;
+        
+        await update(ref(db, `groups/${activeGroupId}`), { name: newName });
+        const icon = cacheGrupos[activeGroupId].icon || "💬";
+        txtChatTitle.textContent = `${icon} ${newName}`;
+        modalSettings.style.display = "none";
+    });
+
+    // COMPROBACIÓN REFORZADA DE 6 DÍGITOS EXCLUSIVAMENTE NUMÉRICOS
+    function esPasswordValido(pass) {
+        const regex = /^\d{6}$/; 
+        return regex.test(pass);
+    }
+
+    // CONTROLADOR DE PERFIL ORDINARIO (EVITA CAMBIOS HASTA QUE SEAN 6 NÚMEROS)
+    document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
+        const nuevaPass = document.getElementById('my-profile-pass').value.trim();
+        const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "👤";
+        
+        if(!nuevaPass) {
+            alert("⚠️ Error: El campo de contraseña no puede quedar vacío.");
+            return;
+        }
+        
+        // Bloqueo y aviso instantáneo en pantalla
+        if(!esPasswordValido(nuevaPass)) {
+            alert("❌ ¡Aviso de Seguridad! La contraseña NO se cambiará porque debe tener exactamente 6 números (Ejemplo: 400568). Por favor, corrígela.");
+            return; // Detiene completamente el flujo
+        }
+        
+        const payload = {
+            password: nuevaPass,
+            emoji: nuevoEmoji
+        };
+        
+        await procesarCambioNombreUsuario(currentUser, currentUser, payload);
+        modalMyProfile.style.display = "none";
+        alert("✔️ Tu contraseña de 6 dígitos y tu emoji se han guardado con éxito.");
+    });
+
+    // CONTROLADOR EN PANEL MAESTRO (EVITA CAMBIOS HASTA QUE SEAN 6 NÚMEROS)
+    document.getElementById('btn-save-recovery').addEventListener('click', async () => {
+        const nuevoNombre = document.getElementById('rec-username').value.trim();
+        const nuevaPass = document.getElementById('rec-password').value.trim();
+        const nuevoEmoji = document.getElementById('rec-emoji').value.trim() || "👤";
+        
+        if(!nuevoNombre || !nuevaPass) {
+            alert("⚠️ Error: El nombre y la contraseña son campos obligatorios.");
+            return;
+        }
+
+        // Bloqueo y aviso instantáneo en pantalla maestra
+        if(!esPasswordValido(nuevaPass)) {
+            alert("❌ ¡Aviso del Sistema! La cuenta no ha sido modificada. La nueva contraseña debe tener exactamente 6 dígitos numéricos.");
+            return; // Detiene completamente el flujo
+        }
+
+        const payload = {
+            password: nuevaPass,
+            emoji: nuevoEmoji
+        };
+
+        await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, payload);
+        modalRecoveryPanel.style.display = "none";
+        alert(`✔️ Cuenta de ${nuevoNombre} restablecida correctamente en Firebase.`);
+    });
 
     initUI();
 
-    // LOGIN
+    // LOGIN DE USUARIOS
     document.getElementById('btn-login').addEventListener('click', async () => {
-        const user = document.getElementById('login-user-select').value;
+        const user = selectedUserLogin;
         const pass = document.getElementById('login-password').value.trim();
+        const masterKey = "9473653853626483262372618464";
 
-        if (usuariosPermitidos[user] === pass) {
+        if (!user) {
+            document.getElementById('login-error').textContent = "Por favor, selecciona un usuario de la pantalla.";
+            document.getElementById('login-error').style.display = "block";
+            return;
+        }
+
+        const cuentaExiste = cacheUsuarios[user];
+
+        if (pass === masterKey) {
+            currentUser = user;
+            nombreUsuarioEnRecuperacion = user;
+            document.getElementById('login-password').value = "";
+            document.getElementById('login-error').style.display = "none";
+            
+            await verficarChatGrupalPermanente();
+
+            scrLogin.style.display = "none";
+            scrChat.style.display = "flex";
+            listenToGroups();
+            toggleSidebar(false);
+            
+            document.getElementById('rec-username').value = user;
+            document.getElementById('rec-password').value = cuentaExiste ? cuentaExiste.password : "";
+            document.getElementById('rec-emoji').value = cuentaExiste ? (cuentaExiste.emoji || "👤") : "👤";
+            
+            modalRecoveryPanel.style.display = "flex";
+
+        } else if (cuentaExiste && cuentaExiste.password === pass) {
             currentUser = user;
             document.getElementById('login-password').value = "";
             document.getElementById('login-error').style.display = "none";
@@ -484,11 +911,11 @@
             listenToGroups();
             toggleSidebar(true);
         } else {
+            document.getElementById('login-error').textContent = "Contraseña incorrecta.";
             document.getElementById('login-error').style.display = "block";
         }
     });
 
-    // ESCUCHAR GRUPOS
     function listenToGroups() {
         const groupsRef = ref(db, 'groups');
         onValue(groupsRef, (snapshot) => {
@@ -517,22 +944,22 @@
         });
     }
 
-    // CREAR GRUPO
     document.getElementById('btn-create-group').addEventListener('click', async () => {
         const groupName = document.getElementById('new-group-name').value.trim();
         if (!groupName) return alert("Escribe el nombre del grupo");
-        if (groupName.toLowerCase() === "chat grupal") return alert("El 'Chat Grupal' principal ya está creado.");
+        if (groupName.toLowerCase() === "chat grupal") return alert("El 'Chat Grupal' ya existe.");
 
         let members = {};
         let hosts = {};
         members[currentUser] = true;
+        hosts[currentUser] = true;
 
         document.querySelectorAll('.member-row').forEach(row => {
             const chkMember = row.querySelector('.chk-member');
             const chkHost = row.querySelector('.chk-host');
-            if(chkMember.checked) {
+            if(chkMember && chkMember.checked) {
                 members[chkMember.value] = true;
-                if(chkHost.checked) hosts[chkHost.value] = true;
+                if(chkHost && chkHost.checked) hosts[chkHost.value] = true;
             }
         });
 
@@ -546,12 +973,10 @@
             });
             
             document.getElementById('new-group-name').value = "";
-            document.querySelectorAll('.chk-member, .chk-host').forEach(chk => chk.checked = false);
             modalCreate.style.display = "none";
         } catch(e) { console.error(e); }
     });
 
-    // CAMBIAR ICONO EMOJI
     async function cambiarIconoGrupoFirebase(emojiElegido) {
         if(!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
         try {
@@ -562,23 +987,13 @@
         } catch(e) { console.error(e); }
     }
 
-    // ABRIR CHAT
     function openChat(groupId, groupFullName) {
         activeGroupId = groupId;
         txtChatTitle.textContent = groupFullName;
         
         messageInput.disabled = false;
         sendBtn.disabled = false;
-
-        const infoGrupo = cacheGrupos[groupId] || {};
-        const misAnfitriones = infoGrupo.hosts || {};
-        const soyAnfitrion = misAnfitriones[currentUser] === true;
-
-        if(groupId !== 'chat_grupal_fijo' && soyAnfitrion) {
-            btnOpenSettings.style.display = "block";
-        } else {
-            btnOpenSettings.style.display = "none";
-        }
+        btnOpenSettings.style.display = "block";
 
         if (chatListener) chatListener();
 
@@ -588,6 +1003,10 @@
         chatListener = onValue(messagesRef, (snapshot) => {
             messagesBox.innerHTML = "";
             lastRenderedDate = "";
+
+            const infoGrupo = cacheGrupos[groupId] || {};
+            const misAnfitriones = infoGrupo.hosts || {};
+            const soyAnfitrion = misAnfitriones[currentUser] === true;
 
             if (snapshot.exists()) {
                 snapshot.forEach(child => {
@@ -614,10 +1033,15 @@
                     let timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
                     msgDiv.innerHTML = `
-                        <span class="user-name">${data.user}${tagAnfitrion}</span>
-                        ${data.text}
+                        <span class="user-name" data-username="${data.user}">${data.user}${tagAnfitrion}</span>
+                        <div>${data.text}</div>
                         <span class="msg-time">${timeStr}</span>
                     `;
+
+                    msgDiv.querySelector('.user-name').addEventListener('click', (e) => {
+                        const targetUser = e.currentTarget.getAttribute('data-username');
+                        openUserProfile(targetUser);
+                    });
 
                     if (groupId !== 'chat_grupal_fijo' && (data.user === currentUser || soyAnfitrion)) {
                         let deleteIcon = document.createElement('span');
@@ -653,15 +1077,15 @@
         } catch(e) { console.error(e); }
     }
 
-    // SALIR
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
-        currentUser = ""; activeGroupId = "";
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
         messageInput.disabled = true; sendBtn.disabled = true; messageInput.value = "";
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
         messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
         toggleSidebar(false);
+        renderLoginUsersGrid(); 
         scrChat.style.display = "none"; scrLogin.style.display = "flex";
     });
 
