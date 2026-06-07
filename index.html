@@ -74,7 +74,7 @@
         }
         .login-users-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
             gap: 10px;
         }
         .login-user-card {
@@ -102,6 +102,9 @@
         .login-user-name {
             font-size: 12px; font-weight: bold; color: #333; text-align: center;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+        .login-user-status {
+            font-size: 9px; color: #999; font-weight: normal; margin-top: 2px;
         }
 
         input {
@@ -224,6 +227,7 @@
         .admin-section-title { font-size: 14px; font-weight: bold; margin: 15px 0 5px 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 3px; }
         .manage-member-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 14px; }
         .btn-small-add { background: #4caf50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-small-add:disabled { background: #ccc; color: #666; cursor: not-allowed; }
         .btn-small-kick { background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
 
         /* BUSCADOR Y ENTORNO DE EMOJIS */
@@ -274,6 +278,7 @@
 
 <div class="app-container">
 
+    <!-- PANTALLA 1: LOGIN VISUAL -->
     <div class="login-screen" id="scr-login">
         <h2>Entrar a Chat-simple</h2>
         <div class="login-subtitle">Selecciona tu usuario para acceder:</div>
@@ -287,8 +292,10 @@
         <button class="btn-primary" id="btn-login">Acceder</button>
     </div>
 
+    <!-- PANTALLA 2: CHAT PRINCIPAL -->
     <div class="chat-screen" id="scr-chat">
         
+        <!-- MENÚ LATERAL (SIDEBAR) -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span style="font-weight:bold;">Mis Grupos Privados</span>
@@ -303,6 +310,7 @@
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
+        <!-- MODAL 1: CREAR GRUPO -->
         <div class="modal-screen" id="modal-create-group">
             <div class="modal-header">
                 <h3 style="margin:0;">Crear Grupo Nuevo</h3>
@@ -316,6 +324,7 @@
             </div>
         </div>
 
+        <!-- MODAL 2: AJUSTES DINÁMICOS DE GRUPO -->
         <div class="modal-screen" id="modal-settings-group">
             <div class="modal-header">
                 <h3 style="margin:0;" id="settings-modal-title">Ajustes del Grupo</h3>
@@ -336,11 +345,15 @@
                 </div>
 
                 <div class="admin-section-title" id="lbl-members-title">Integrantes</div>
-                <div id="admin-members-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; padding:5px; background:#fafafa;"></div>
+                <div id="admin-members-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; padding:5px; background:#fafafa; margin-bottom:15px;"></div>
+
+                <!-- BOTÓN PARA SALIR DEL GRUPO EN CURSO -->
+                <button class="btn-primary" id="btn-leave-group" style="background-color: #f44336; font-weight: bold; display: none; margin-top: 10px;">🚪 Salir del Grupo</button>
 
             </div>
         </div>
 
+        <!-- MODAL 3: PERFIL DE OTROS USUARIOS -->
         <div class="modal-screen" id="modal-user-profile">
             <div class="modal-header">
                 <h3 style="margin:0;">Perfil de Usuario</h3>
@@ -356,6 +369,7 @@
             </div>
         </div>
 
+        <!-- MODAL 4: AJUSTES DE MI PROPIO PERFIL -->
         <div class="modal-screen" id="modal-my-profile">
             <div class="modal-header">
                 <h3 style="margin:0;">Ajustes de mi Perfil</h3>
@@ -377,6 +391,7 @@
             </div>
         </div>
 
+        <!-- MODAL 5: PANEL DE RECUPERACIÓN AVANZADO -->
         <div class="modal-screen" id="modal-recovery-panel">
             <div class="modal-header">
                 <h3 style="margin:0;">Panel de Recuperación Maestro</h3>
@@ -399,6 +414,7 @@
             </div>
         </div>
 
+        <!-- ENCABEZADO DE LA VENTANA DE CHAT -->
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
@@ -410,10 +426,12 @@
             </div>
         </div>
 
+        <!-- CONTENEDOR DE MENSAJES -->
         <div class="messages-box" id="messages-box">
             <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
         </div>
 
+        <!-- SECCIÓN DE ENVIAR -->
         <div class="input-area">
             <input type="text" id="message-input" placeholder="Escribe un mensaje..." autocomplete="off" disabled>
             <button id="send-btn" disabled>Enviar</button>
@@ -499,12 +517,11 @@
         onValue(usersRef, (snapshot) => {
             if (!snapshot.exists()) {
                 const inicialBD = {};
-                const avatars = ["🦊", "🦁", "🐯", "🐱", "🐨", "🐼", "🐵", "🦄", "🦅", "🦉", "🐺", "🐸"];
                 Object.keys(usuariosPermitidosPredefinidos).forEach(nombre => {
-                    const idx = nombre.charCodeAt(0) % avatars.length;
                     inicialBD[nombre] = {
                         password: usuariosPermitidosPredefinidos[nombre],
-                        emoji: avatars[idx]
+                        emoji: "😀", 
+                        loggedOnce: false 
                     };
                 });
                 set(usersRef, inicialBD);
@@ -524,9 +541,13 @@
             const card = document.createElement('div');
             card.className = `login-user-card ${nombre === selectedUserLogin ? 'selected' : ''}`;
             
+            const cuentaActiva = userData && userData.loggedOnce === true;
+            const statusLabel = cuentaActiva ? "" : `<div class="login-user-status">(sin cuenta)</div>`;
+
             card.innerHTML = `
-                <div class="login-user-avatar">${userData.emoji || '👤'}</div>
+                <div class="login-user-avatar">${userData.emoji || '😀'}</div>
                 <div class="login-user-name">${nombre}</div>
+                ${statusLabel}
             `;
 
             card.addEventListener('click', () => {
@@ -576,15 +597,30 @@
     function renderCreateGroupMembers() {
         const container = document.getElementById('checkboxes-container');
         container.innerHTML = "";
+        
         Object.keys(cacheUsuarios).forEach(nombre => {
-            if (nombre === currentUser) return; 
-            
+            const userData = cacheUsuarios[nombre];
+            const cuentaActiva = userData && userData.loggedOnce === true;
+
             let row = document.createElement('div');
             row.className = 'member-row';
-            row.innerHTML = `
-                <label><input type="checkbox" value="${nombre}" class="chk-member"> ${nombre}</label>
-                <label style="color:#888;"><input type="checkbox" value="${nombre}" class="chk-host"> Admin</label>
-            `;
+
+            if (nombre === currentUser) {
+                row.innerHTML = `
+                    <label><input type="checkbox" value="${nombre}" class="chk-member" checked disabled> <b>${nombre} (Tú)</b></label>
+                    <label style="color:#d32f2f; font-weight:bold;"><input type="checkbox" value="${nombre}" class="chk-host" checked> Admin</label>
+                `;
+            } else if (cuentaActiva) {
+                row.innerHTML = `
+                    <label><input type="checkbox" value="${nombre}" class="chk-member"> ${nombre}</label>
+                    <label style="color:#888;"><input type="checkbox" value="${nombre}" class="chk-host"> Admin</label>
+                `;
+            } else {
+                row.innerHTML = `
+                    <label style="color:#bbb; cursor: not-allowed;" title="Este usuario aún no ha iniciado sesión"><input type="checkbox" disabled> <s>${nombre} (sin cuenta)</s></label>
+                    <label style="color:#ddd; cursor: not-allowed;"><input type="checkbox" disabled> Admin</label>
+                `;
+            }
             container.appendChild(row);
         });
     }
@@ -601,22 +637,56 @@
             let isMember = members[nombre] === true;
             let isHost = hosts[nombre] === true;
             
+            const userData = cacheUsuarios[nombre];
+            const cuentaActiva = userData && userData.loggedOnce === true;
+
             if (!soyAnfitrion && !isMember) return;
 
             let row = document.createElement('div');
             row.className = 'manage-member-row';
             let tagRole = isHost ? ' <span style="color:#d32f2f; font-size:11px; font-weight:bold;">[Anfitrión]</span>' : '';
             
+            // Generar el nombre con estilo dinámico si no tiene cuenta activa
+            let displayName = nombre === currentUser ? `<b>${nombre}</b>` : nombre;
+            if (!cuentaActiva) {
+                displayName = `<span style="color:#aaa; text-decoration:line-through;">${nombre} (sin cuenta)</span>`;
+            }
+
             if (soyAnfitrion) {
                 if (nombre === currentUser) {
-                    row.innerHTML = `<span>👤 <b>${nombre}</b> ${tagRole}</span> <span style="font-size:12px; color:#777;">Tú</span>`;
+                    const totalHosts = Object.keys(hosts).length;
+                    if (totalHosts > 1 && activeGroupId !== 'chat_grupal_fijo') {
+                        row.innerHTML = `
+                            <span>👤 ${displayName} ${tagRole}</span>
+                            <button class="btn-small-host" data-user="${nombre}" style="background:#ff9800; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">⬇️ Quitar Admin</button>
+                        `;
+                    } else {
+                        row.innerHTML = `<span>👤 ${displayName} ${tagRole} <span style="font-size:11px; color:#999;">(Tú)</span></span>`;
+                    }
                 } else if (isMember) {
-                    row.innerHTML = `<span>👤 ${nombre} ${tagRole}</span> <button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
+                    let btnHostText = isHost ? "⬇️ Quitar Admin" : "👑 Hacer Admin";
+                    let btnHostBg = isHost ? "#ff9800" : "#009688";
+                    
+                    // Bloqueos si estamos en el chat permanente de todos
+                    let renderBtnHost = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
+                    let renderBtnKick = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
+                    
+                    row.innerHTML = `
+                        <span>👤 ${displayName} ${tagRole}</span>
+                        <div style="display:flex; gap:5px;">
+                            ${renderBtnHost}
+                            ${renderBtnKick}
+                        </div>
+                    `;
                 } else {
-                    row.innerHTML = `<span>👤 ${nombre}</span> <button class="btn-small-add" data-user="${nombre}">➕ Añadir</button>`;
+                    if (cuentaActiva) {
+                        row.innerHTML = `<span>👤 ${displayName}</span> <button class="btn-small-add" data-user="${nombre}">➕ Añadir</button>`;
+                    } else {
+                        row.innerHTML = `<span>👤 ${displayName}</span> <button class="btn-small-add" disabled>➕ Añadir</button>`;
+                    }
                 }
             } else {
-                row.innerHTML = `<span>👤 ${nombre} ${tagRole}</span>`;
+                row.innerHTML = `<span>👤 ${displayName} ${tagRole}</span>`;
             }
             container.appendChild(row);
         });
@@ -627,7 +697,9 @@
                     const userToKick = e.target.getAttribute('data-user');
                     if(confirm(`¿Expulsar a ${userToKick} del grupo?`)) {
                         await remove(ref(db, `groups/${activeGroupId}/members/${userToKick}`));
+                        await remove(ref(db, `groups/${activeGroupId}/hosts/${userToKick}`)); 
                         if(cacheGrupos[activeGroupId].members) delete cacheGrupos[activeGroupId].members[userToKick];
+                        if(cacheGrupos[activeGroupId].hosts) delete cacheGrupos[activeGroupId].hosts[userToKick];
                         renderAdminMembers(true); 
                     }
                 });
@@ -642,13 +714,31 @@
                     renderAdminMembers(true); 
                 });
             });
+
+            container.querySelectorAll('.btn-small-host').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const targetUser = e.target.getAttribute('data-user');
+                    const currentHosts = cacheGrupos[activeGroupId].hosts || {};
+                    const esHost = currentHosts[targetUser] === true;
+
+                    if (esHost) {
+                        await remove(ref(db, `groups/${activeGroupId}/hosts/${targetUser}`));
+                        if(cacheGrupos[activeGroupId].hosts) delete cacheGrupos[activeGroupId].hosts[targetUser];
+                    } else {
+                        await update(ref(db, `groups/${activeGroupId}/hosts`), { [targetUser]: true });
+                        if(!cacheGrupos[activeGroupId].hosts) cacheGrupos[activeGroupId].hosts = {};
+                        cacheGrupos[activeGroupId].hosts[targetUser] = true;
+                    }
+                    renderAdminMembers(true);
+                });
+            });
         }
     }
 
     function openUserProfile(targetUser) {
         document.getElementById('prof-name').textContent = targetUser;
         const datosUser = cacheUsuarios[targetUser] || {};
-        document.getElementById('prof-avatar').textContent = datosUser.emoji || "👤";
+        document.getElementById('prof-avatar').textContent = datosUser.emoji || "😀";
 
         const listContainer = document.getElementById('prof-common-groups');
         listContainer.innerHTML = "";
@@ -755,7 +845,7 @@
         const misDatos = cacheUsuarios[currentUser] || {};
         document.getElementById('my-profile-name').value = currentUser;
         document.getElementById('my-profile-pass').value = misDatos.password || "";
-        document.getElementById('my-profile-emoji').value = misDatos.emoji || "👤";
+        document.getElementById('my-profile-emoji').value = misDatos.emoji || "😀";
         modalMyProfile.style.display = "flex";
     });
 
@@ -773,15 +863,23 @@
         const inputName = document.getElementById('edit-group-name');
         const btnSaveName = document.getElementById('btn-save-group-name');
         const wrapperEmoji = document.getElementById('wrapper-emoji-selection');
+        const btnLeaveGroup = document.getElementById('btn-leave-group');
 
         inputName.value = infoGrupo.name || "";
+
+        // Ocultar o mostrar botón de salida según corresponda
+        if (activeGroupId === 'chat_grupal_fijo') {
+            btnLeaveGroup.style.display = "none"; // Nadie se va del general de todos
+        } else {
+            btnLeaveGroup.style.display = "block"; 
+        }
 
         if (soyAnfitrion && activeGroupId !== 'chat_grupal_fijo') {
             document.getElementById('settings-modal-title').textContent = "Gestionar Grupo (Admin)";
             inputName.disabled = false;
             btnSaveName.style.display = "block";
             wrapperEmoji.style.display = "block";
-            document.getElementById('lbl-members-title').textContent = "Gestionar Miembros (Añadir/Expulsar)";
+            document.getElementById('lbl-members-title').textContent = "Gestionar Miembros e Historial";
             renderAdminMembers(true);
         } else {
             document.getElementById('settings-modal-title').textContent = "Información del Grupo";
@@ -805,31 +903,64 @@
         modalSettings.style.display = "none";
     });
 
-    // COMPROBACIÓN REFORZADA DE 6 DÍGITOS EXCLUSIVAMENTE NUMÉRICOS
+    // LÓGICA DE ABANDONAR EL GRUPO VOLUNTARIAMENTE
+    document.getElementById('btn-leave-group').addEventListener('click', async () => {
+        if (!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
+        
+        if (confirm("¿Estás completamente seguro de que deseas salir de este grupo privado?")) {
+            const infoGrupo = cacheGrupos[activeGroupId] || {};
+            const hosts = infoGrupo.hosts || {};
+            const members = infoGrupo.members || {};
+
+            // Validación de huérfanos: si eres admin y hay más miembros, delega el mando antes.
+            if (hosts[currentUser] && Object.keys(hosts).length === 1 && Object.keys(members).length > 1) {
+                alert("⚠️ Error: Eres el único administrador. Nomina a otro integrante como 'Admin' en la lista antes de proceder a salir.");
+                return;
+            }
+
+            try {
+                await remove(ref(db, `groups/${activeGroupId}/members/${currentUser}`));
+                await remove(ref(db, `groups/${activeGroupId}/hosts/${currentUser}`));
+
+                modalSettings.style.display = "none";
+                if (chatListener) chatListener();
+                
+                activeGroupId = "";
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                messageInput.value = "";
+                txtChatTitle.textContent = "Selecciona un grupo";
+                btnOpenSettings.style.display = "none";
+                messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
+                
+                alert("Has salido del grupo correctamente.");
+            } catch(e) { console.error(e); }
+        }
+    });
+
     function esPasswordValido(pass) {
         const regex = /^\d{6}$/; 
         return regex.test(pass);
     }
 
-    // CONTROLADOR DE PERFIL ORDINARIO (EVITA CAMBIOS HASTA QUE SEAN 6 NÚMEROS)
     document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
         const nuevaPass = document.getElementById('my-profile-pass').value.trim();
-        const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "👤";
+        const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "😀";
         
         if(!nuevaPass) {
             alert("⚠️ Error: El campo de contraseña no puede quedar vacío.");
             return;
         }
         
-        // Bloqueo y aviso instantáneo en pantalla
         if(!esPasswordValido(nuevaPass)) {
-            alert("❌ ¡Aviso de Seguridad! La contraseña NO se cambiará porque debe tener exactamente 6 números (Ejemplo: 400568). Por favor, corrígela.");
-            return; // Detiene completamente el flujo
+            alert("❌ ¡Aviso de Seguridad! La contraseña NO se cambiará porque debe tener exactamente 6 números.");
+            return; 
         }
         
         const payload = {
             password: nuevaPass,
-            emoji: nuevoEmoji
+            emoji: nuevoEmoji,
+            loggedOnce: true 
         };
         
         await procesarCambioNombreUsuario(currentUser, currentUser, payload);
@@ -837,26 +968,25 @@
         alert("✔️ Tu contraseña de 6 dígitos y tu emoji se han guardado con éxito.");
     });
 
-    // CONTROLADOR EN PANEL MAESTRO (EVITA CAMBIOS HASTA QUE SEAN 6 NÚMEROS)
     document.getElementById('btn-save-recovery').addEventListener('click', async () => {
         const nuevoNombre = document.getElementById('rec-username').value.trim();
         const nuevaPass = document.getElementById('rec-password').value.trim();
-        const nuevoEmoji = document.getElementById('rec-emoji').value.trim() || "👤";
+        const nuevoEmoji = document.getElementById('rec-emoji').value.trim() || "😀";
         
         if(!nuevoNombre || !nuevaPass) {
             alert("⚠️ Error: El nombre y la contraseña son campos obligatorios.");
             return;
         }
 
-        // Bloqueo y aviso instantáneo en pantalla maestra
         if(!esPasswordValido(nuevaPass)) {
             alert("❌ ¡Aviso del Sistema! La cuenta no ha sido modificada. La nueva contraseña debe tener exactamente 6 dígitos numéricos.");
-            return; // Detiene completamente el flujo
+            return; 
         }
 
         const payload = {
             password: nuevaPass,
-            emoji: nuevoEmoji
+            emoji: nuevoEmoji,
+            loggedOnce: true 
         };
 
         await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, payload);
@@ -895,7 +1025,7 @@
             
             document.getElementById('rec-username').value = user;
             document.getElementById('rec-password').value = cuentaExiste ? cuentaExiste.password : "";
-            document.getElementById('rec-emoji').value = cuentaExiste ? (cuentaExiste.emoji || "👤") : "👤";
+            document.getElementById('rec-emoji').value = cuentaExiste ? (cuentaExiste.emoji || "😀") : "😀";
             
             modalRecoveryPanel.style.display = "flex";
 
@@ -904,6 +1034,10 @@
             document.getElementById('login-password').value = "";
             document.getElementById('login-error').style.display = "none";
             
+            if (!cuentaExiste.loggedOnce) {
+                await update(ref(db, `users/${user}`), { loggedOnce: true });
+            }
+
             await verficarChatGrupalPermanente();
 
             scrLogin.style.display = "none";
@@ -952,16 +1086,23 @@
         let members = {};
         let hosts = {};
         members[currentUser] = true;
-        hosts[currentUser] = true;
 
         document.querySelectorAll('.member-row').forEach(row => {
             const chkMember = row.querySelector('.chk-member');
             const chkHost = row.querySelector('.chk-host');
-            if(chkMember && chkMember.checked) {
+            
+            if (chkMember && chkMember.value === currentUser) {
+                if (chkHost && chkHost.checked) hosts[currentUser] = true;
+            } else if (chkMember && chkMember.checked && !chkMember.disabled) {
                 members[chkMember.value] = true;
-                if(chkHost && chkHost.checked) hosts[chkHost.value] = true;
+                if (chkHost && chkHost.checked && !chkHost.disabled) hosts[chkHost.value] = true;
             }
         });
+
+        if (Object.keys(hosts).length === 0) {
+            alert("⚠️ ¡Obligatorio! Tienes que marcar al menos a un usuario (puedes ser tú mismo) como 'Admin' para crear el grupo.");
+            return;
+        }
 
         try {
             const newGroupRef = push(ref(db, 'groups'));
