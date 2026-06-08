@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat-simple</title>
+    <title>Chat-simple Pro</title>
     <style>
         :root {
             --primary-color: #075e54;
@@ -127,6 +127,7 @@
             flex-direction: column;
             height: 100%;
             width: 100%;
+            position: relative;
         }
         
         /* HEADER PRINCIPAL */
@@ -147,7 +148,11 @@
         }
         .header h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .btn-header-action {
+            background: none; border: none; color: white;
+            font-size: 20px; cursor: pointer; display: none; padding: 4px;
+        }
         .btn-settings {
             background: rgba(255,255,255,0.2); color: white; border: none;
             padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: none;
@@ -273,13 +278,28 @@
             padding: 12px 20px; margin-left: 6px; border-radius: 20px; cursor: pointer; font-weight: bold;
         }
         
-        /* ESTILO NUEVO PARA BOTONES DE ADJUNTOS */
         .input-area button.btn-icon {
             background: none !important; color: var(--primary-color) !important; border: none !important;
             padding: 5px !important; margin: 0 4px 0 0 !important; border-radius: 0 !important;
             cursor: pointer !important; font-weight: normal !important; width: auto !important; font-size: 22px !important;
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
+
+        /* NUEVAS ANIMACIONES Y INTERFAZ DE LLAMADAS */
+        #call-banner {
+            display: none; background: #25d366; color: white; padding: 10px 15px;
+            text-align: center; font-weight: bold; font-size: 13px; align-items: center;
+            justify-content: space-between; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        @keyframes avatarPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+            70% { transform: scale(1.06); box-shadow: 0 0 0 20px rgba(37, 211, 102, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
+        .pulsing-avatar {
+            animation: avatarPulse 1.8s infinite ease-in-out;
+            background: rgba(255,255,255,0.1); border-radius: 50%; padding: 25px;
+        }
     </style>
 </head>
 <body>
@@ -301,9 +321,17 @@
 
     <div class="chat-screen" id="scr-chat">
         
+        <div id="call-banner">
+            <span id="call-banner-text">📞 Llamada de grupo en curso...</span>
+            <div style="display:flex; gap:8px;">
+                <button id="btn-join-call" style="background:white; color:#25d366; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Unirse</button>
+                <button id="btn-decline-call" style="background:rgba(0,0,0,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Ignorar</button>
+            </div>
+        </div>
+
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span style="font-weight:bold;">Mis Grupos Privados</span>
+                <span style="font-weight:bold;">Mis Conversaciones</span>
                 <button class="sidebar-close-btn" id="btn-close-sidebar">✕</button>
             </div>
             <div class="groups-list" id="groups-container"></div>
@@ -351,7 +379,6 @@
                 <div id="admin-members-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; padding:5px; background:#fafafa; margin-bottom:15px;"></div>
 
                 <button class="btn-primary" id="btn-leave-group" style="background-color: #f44336; font-weight: bold; display: none; margin-top: 10px;">🚪 Salir del Grupo</button>
-
             </div>
         </div>
 
@@ -363,10 +390,12 @@
             <div class="modal-body" style="text-align: center;">
                 <div id="prof-avatar" style="font-size: 65px; margin: 20px 0 10px 0; user-select: none;">👤</div>
                 <h2 id="prof-name" style="margin: 0 0 5px 0; color: var(--primary-color);">Nombre</h2>
-                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:20px;">Miembro del systema</div>
+                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:15px;">Miembro del systema</div>
                 
+                <button class="btn-primary" id="btn-start-private-chat" style="margin-bottom: 20px; background-color: var(--secondary-color); font-size: 15px;">💬 Iniciar Chat Privado</button>
+
                 <div class="admin-section-title" style="text-align: left;">Grupos en común</div>
-                <div id="prof-common-groups" style="text-align: left; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; max-height: 220px; overflow-y: auto;"></div>
+                <div id="prof-common-groups" style="text-align: left; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; max-height: 180px; overflow-y: auto;"></div>
             </div>
         </div>
 
@@ -413,12 +442,27 @@
             </div>
         </div>
 
+        <div class="modal-screen" id="modal-call-screen" style="background:#0b141a; color:white; z-index: 18;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; padding:20px;">
+                <div class="pulsing-avatar">
+                    <div id="call-screen-avatar" style="font-size: 70px; user-select: none;">📞</div>
+                </div>
+                <h2 id="call-screen-title" style="margin:10px 0 0 0; font-size:24px;">Llamada de Voz</h2>
+                <div id="call-screen-status" style="color:#25d366; font-size:14px; font-weight:500;">Conectando con el grupo...</div>
+                <div id="call-timer" style="font-size:20px; font-family:monospace; margin-top:10px; letter-spacing:1px; background:rgba(255,255,255,0.1); padding:4px 14px; border-radius:20px;">00:00</div>
+            </div>
+            <div style="padding:35px; display:flex; justify-content:center; background:#111b21; box-shadow: 0 -4px 10px rgba(0,0,0,0.3);">
+                <button id="btn-hangup" style="background:#f44336; color:white; border:none; border-radius:50%; width:65px; height:65px; font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🛑</button>
+            </div>
+        </div>
+
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
                 <h3 id="txt-chat-title">Selecciona un grupo</h3>
             </div>
             <div class="header-actions">
+                <button class="btn-header-action" id="btn-group-call" title="Iniciar Llamada en este grupo">📞</button>
                 <button class="btn-settings" id="btn-open-settings">⚙️ Ajustes</button>
                 <button class="btn-logout" id="btn-logout">Salir</button>
             </div>
@@ -430,8 +474,12 @@
 
         <div class="input-area">
             <input type="file" id="hidden-image-input" accept="image/*" style="display: none;">
+            <input type="file" id="hidden-video-input" accept="video/*" style="display: none;">
+            
             <button id="btn-attach-image" class="btn-icon" title="Enviar Foto" disabled>📷</button>
+            <button id="btn-attach-video" class="btn-icon" title="Enviar Vídeo" disabled>🎥</button>
             <button id="btn-record-audio" class="btn-icon" title="Grabar Audio de Voz" disabled>🎙️</button>
+            
             <input type="text" id="message-input" placeholder="Escribe un mensaje..." autocomplete="off" disabled>
             <button id="send-btn" disabled>Enviar</button>
         </div>
@@ -483,16 +531,20 @@
     let currentUser = "";
     let activeGroupId = "";
     let chatListener = null;
+    let callStateListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
     let nombreUsuarioEnRecuperacion = ""; 
     let selectedUserLogin = ""; 
+    let targetUserProfileName = "";
 
-    // VARIABLES NUEVAS DE GRABACIÓN
+    // ADJUNTOS AUDIO/LLAMADAS
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
+    let callTimerInterval = null;
+    let activeCallGroupTracking = null;
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -510,11 +562,17 @@
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
+    const modalCallScreen = document.getElementById('modal-call-screen');
 
-    // NUEVOS ELEMENTOS DOM
+    // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
+    const btnAttachVideo = document.getElementById('btn-attach-video');
     const btnRecordAudio = document.getElementById('btn-record-audio');
+    const btnGroupCall = document.getElementById('btn-group-call');
     const hiddenImageInput = document.getElementById('hidden-image-input');
+    const hiddenVideoInput = document.getElementById('hidden-video-input');
+    const callBanner = document.getElementById('call-banner');
+    const callBannerText = document.getElementById('call-banner-text');
 
     function initUI() {
         generarBancoEmojis();
@@ -572,33 +630,26 @@
 
     async function procesarCambioNombreUsuario(nombreViejo, nombreNuevo, nuevosDatosCuenta) {
         if (!nombreViejo || !nombreNuevo) return;
-        
         await set(ref(db, `users/${nombreNuevo}`), nuevosDatosCuenta);
-        
         if (nombreViejo !== nombreNuevo) {
             await remove(ref(db, `users/${nombreViejo}`));
-            
             for (let gId in cacheGrupos) {
                 const grupo = cacheGrupos[gId];
                 let batch = {};
                 let requiereCambio = false;
-
                 if (grupo.members && grupo.members[nombreViejo]) {
                     batch[`groups/${gId}/members/${nombreNuevo}`] = true;
                     batch[`groups/${gId}/members/${nombreViejo}`] = null;
                     requiereCambio = true;
                 }
-                if (grupo.hosts && group.hosts[nombreViejo]) {
+                if (grupo.hosts && grupo.hosts[nombreViejo]) {
                     batch[`groups/${gId}/hosts/${nombreNuevo}`] = true;
                     batch[`groups/${gId}/hosts/${nombreViejo}`] = null;
                     requiereCambio = true;
                 }
-                if (requiereCambio) {
-                    await update(ref(db), batch);
-                }
+                if (requiereCambio) await update(ref(db), batch);
             }
         }
-        
         if (currentUser === nombreViejo) currentUser = nombreNuevo;
         if (selectedUserLogin === nombreViejo) selectedUserLogin = nombreNuevo;
     }
@@ -610,7 +661,6 @@
         Object.keys(cacheUsuarios).forEach(nombre => {
             const userData = cacheUsuarios[nombre];
             const cuentaActiva = userData && userData.loggedOnce === true;
-
             let row = document.createElement('div');
             row.className = 'member-row';
 
@@ -645,7 +695,6 @@
         Object.keys(cacheUsuarios).forEach(nombre => {
             let isMember = members[nombre] === true;
             let isHost = hosts[nombre] === true;
-            
             const userData = cacheUsuarios[nombre];
             const cuentaActiva = userData && userData.loggedOnce === true;
 
@@ -654,16 +703,13 @@
             let row = document.createElement('div');
             row.className = 'manage-member-row';
             let tagRole = isHost ? ' <span style="color:#d32f2f; font-size:11px; font-weight:bold;">[Anfitrión]</span>' : '';
-            
             let displayName = nombre === currentUser ? `<b>${nombre}</b>` : nombre;
-            if (!cuentaActiva) {
-                displayName = `<span style="color:#aaa; text-decoration:line-through;">${nombre} (sin cuenta)</span>`;
-            }
+            if (!cuentaActiva) displayName = `<span style="color:#aaa; text-decoration:line-through;">${nombre} (sin cuenta)</span>`;
 
             if (soyAnfitrion) {
                 if (nombre === currentUser) {
                     const totalHosts = Object.keys(hosts).length;
-                    if (totalHosts > 1 && activeGroupId !== 'chat_grupal_fijo') {
+                    if (totalHosts > 1 && activeGroupId !== 'chat_grupal_fijo' && !infoGrupo.isPrivateChat) {
                         row.innerHTML = `
                             <span>👤 ${displayName} ${tagRole}</span>
                             <button class="btn-small-host" data-user="${nombre}" style="background:#ff9800; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">⬇️ Quitar Admin</button>
@@ -675,8 +721,8 @@
                     let btnHostText = isHost ? "⬇️ Quitar Admin" : "👑 Hacer Admin";
                     let btnHostBg = isHost ? "#ff9800" : "#009688";
                     
-                    let renderBtnHost = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
-                    let renderBtnKick = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
+                    let renderBtnHost = (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
+                    let renderBtnKick = (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) ? '' : `<button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
                     
                     row.innerHTML = `
                         <span>👤 ${displayName} ${tagRole}</span>
@@ -686,7 +732,7 @@
                         </div>
                     `;
                 } else {
-                    if (cuentaActiva) {
+                    if (cuentaActiva && !infoGrupo.isPrivateChat) {
                         row.innerHTML = `<span>👤 ${displayName}</span> <button class="btn-small-add" data-user="${nombre}">➕ Añadir</button>`;
                     } else {
                         row.innerHTML = `<span>👤 ${displayName}</span> <button class="btn-small-add" disabled>➕ Añadir</button>`;
@@ -727,7 +773,6 @@
                     const targetUser = e.target.getAttribute('data-user');
                     const currentHosts = cacheGrupos[activeGroupId].hosts || {};
                     const esHost = currentHosts[targetUser] === true;
-
                     if (esHost) {
                         await remove(ref(db, `groups/${activeGroupId}/hosts/${targetUser}`));
                         if(cacheGrupos[activeGroupId].hosts) delete cacheGrupos[activeGroupId].hosts[targetUser];
@@ -743,9 +788,17 @@
     }
 
     function openUserProfile(targetUser) {
+        targetUserProfileName = targetUser;
         document.getElementById('prof-name').textContent = targetUser;
         const datosUser = cacheUsuarios[targetUser] || {};
         document.getElementById('prof-avatar').textContent = datosUser.emoji || "😀";
+
+        // Mostrar u ocultar botón de chat privado según corresponda (no chatear con uno mismo)
+        if (targetUser === currentUser) {
+            document.getElementById('btn-start-private-chat').style.display = "none";
+        } else {
+            document.getElementById('btn-start-private-chat').style.display = "inline-block";
+        }
 
         const listContainer = document.getElementById('prof-common-groups');
         listContainer.innerHTML = "";
@@ -765,11 +818,44 @@
             }
         });
 
-        if (cont === 0) {
-            listContainer.innerHTML = `<span style="color:#777; font-size:13px;">Ningún grupo en común.</span>`;
-        }
+        if (cont === 0) listContainer.innerHTML = `<span style="color:#777; font-size:13px;">Ningún grupo en común.</span>`;
         modalProfile.style.display = "flex";
     }
+
+    // LÓGICA DE DETECCIÓN E INICIACIÓN DE CHATS PRIVADOS (1-ON-1)
+    document.getElementById('btn-start-private-chat').addEventListener('click', async () => {
+        const targetUser = targetUserProfileName;
+        if (!targetUser || targetUser === currentUser) return;
+
+        let existingGroupId = null;
+        Object.keys(cacheGrupos).forEach(gId => {
+            const g = cacheGrupos[gId];
+            if (g.isPrivateChat && g.members && g.members[currentUser] && g.members[targetUser] && Object.keys(g.members).length === 2) {
+                existingGroupId = gId;
+            }
+        });
+
+        modalProfile.style.display = "none";
+
+        if (existingGroupId) {
+            const targetUserData = cacheUsuarios[targetUser] || {};
+            openChat(existingGroupId, `${targetUserData.emoji || '🔒'} ${targetUser}`);
+        } else {
+            try {
+                const newGroupRef = push(ref(db, 'groups'));
+                const groupData = {
+                    name: `Chat Privado con ${targetUser}`,
+                    icon: "🔒",
+                    isPrivateChat: true,
+                    members: { [currentUser]: true, [targetUser]: true },
+                    hosts: { [currentUser]: true, [targetUser]: true }
+                };
+                await set(newGroupRef, groupData);
+                const targetUserData = cacheUsuarios[targetUser] || {};
+                openChat(newGroupRef.key, `${targetUserData.emoji || '🔒'} ${targetUser}`);
+            } catch(e) { console.error(e); }
+        }
+    });
 
     function generarBancoEmojis() {
         bloquesEmoji.forEach(bloque => {
@@ -874,13 +960,13 @@
 
         inputName.value = infoGrupo.name || "";
 
-        if (activeGroupId === 'chat_grupal_fijo') {
+        if (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) {
             btnLeaveGroup.style.display = "none"; 
         } else {
             btnLeaveGroup.style.display = "block"; 
         }
 
-        if (soyAnfitrion && activeGroupId !== 'chat_grupal_fijo') {
+        if (soyAnfitrion && activeGroupId !== 'chat_grupal_fijo' && !infoGrupo.isPrivateChat) {
             document.getElementById('settings-modal-title').textContent = "Gestionar Grupo (Admin)";
             inputName.disabled = false;
             btnSaveName.style.display = "block";
@@ -888,21 +974,19 @@
             document.getElementById('lbl-members-title').textContent = "Gestionar Miembros e Historial";
             renderAdminMembers(true);
         } else {
-            document.getElementById('settings-modal-title').textContent = "Información del Grupo";
+            document.getElementById('settings-modal-title').textContent = "Información de Sala";
             inputName.disabled = true;
             btnSaveName.style.display = "none";
             wrapperEmoji.style.display = "none";
-            document.getElementById('lbl-members-title').textContent = "Lista de Integrantes";
+            document.getElementById('lbl-members-title').textContent = "Integrantes";
             renderAdminMembers(false);
         }
-
         modalSettings.style.display = "flex"; 
     });
 
     document.getElementById('btn-save-group-name').addEventListener('click', async () => {
         const newName = document.getElementById('edit-group-name').value.trim();
         if(!newName || !activeGroupId) return;
-        
         await update(ref(db, `groups/${activeGroupId}`), { name: newName });
         const icon = cacheGrupos[activeGroupId].icon || "💬";
         txtChatTitle.textContent = `${icon} ${newName}`;
@@ -911,7 +995,6 @@
 
     document.getElementById('btn-leave-group').addEventListener('click', async () => {
         if (!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
-        
         if (confirm("¿Estás completamente seguro de que deseas salir de este grupo privado?")) {
             const infoGrupo = cacheGrupos[activeGroupId] || {};
             const hosts = infoGrupo.hosts || {};
@@ -925,53 +1008,43 @@
             try {
                 await remove(ref(db, `groups/${activeGroupId}/members/${currentUser}`));
                 await remove(ref(db, `groups/${activeGroupId}/hosts/${currentUser}`));
-
                 modalSettings.style.display = "none";
                 if (chatListener) chatListener();
                 
                 activeGroupId = "";
-                messageInput.disabled = true;
-                sendBtn.disabled = true;
-                btnAttachImage.disabled = true;
-                btnRecordAudio.disabled = true;
-                messageInput.value = "";
-                txtChatTitle.textContent = "Selecciona un grupo";
-                btnOpenSettings.style.display = "none";
-                messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
-                
+                desactivarInputsDeChat();
                 alert("Has salido del grupo correctamente.");
             } catch(e) { console.error(e); }
         }
     });
 
+    function desactivarInputsDeChat() {
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        btnAttachImage.disabled = true;
+        btnAttachVideo.disabled = true;
+        btnRecordAudio.disabled = true;
+        btnGroupCall.style.display = "none";
+        messageInput.value = "";
+        txtChatTitle.textContent = "Selecciona un grupo";
+        btnOpenSettings.style.display = "none";
+        messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
+    }
+
     function esPasswordValido(pass) {
-        const regex = /^\d{6}$/; 
-        return regex.test(pass);
+        return /^\d{6}$/.test(pass);
     }
 
     document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
         const nuevaPass = document.getElementById('my-profile-pass').value.trim();
         const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "😀";
         
-        if(!nuevaPass) {
-            alert("⚠️ Error: El campo de contraseña no puede quedar vacío.");
-            return;
-        }
+        if(!nuevaPass) { alert("⚠️ Error: El campo de contraseña no puede quedar vacío."); return; }
+        if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso de Seguridad! La contraseña debe tener exactamente 6 números."); return; }
         
-        if(!esPasswordValido(nuevaPass)) {
-            alert("❌ ¡Aviso de Seguridad! La contraseña NO se cambiará porque debe tener exactamente 6 números.");
-            return; 
-        }
-        
-        const payload = {
-            password: nuevaPass,
-            emoji: nuevoEmoji,
-            loggedOnce: true 
-        };
-        
-        await procesarCambioNombreUsuario(currentUser, currentUser, payload);
+        await procesarCambioNombreUsuario(currentUser, currentUser, { password: nuevaPass, emoji: nuevoEmoji, loggedOnce: true });
         modalMyProfile.style.display = "none";
-        alert("✔️ Tu contraseña de 6 dígitos y tu emoji se han guardado con éxito.");
+        alert("✔️ Tu perfil se ha actualizado con éxito.");
     });
 
     document.getElementById('btn-save-recovery').addEventListener('click', async () => {
@@ -979,30 +1052,17 @@
         const nuevaPass = document.getElementById('rec-password').value.trim();
         const nuevoEmoji = document.getElementById('rec-emoji').value.trim() || "😀";
         
-        if(!nuevoNombre || !nuevaPass) {
-            alert("⚠️ Error: El nombre y la contraseña son campos obligatorios.");
-            return;
-        }
+        if(!nuevoNombre || !nuevaPass) { alert("⚠️ Error: Campos obligatorios."); return; }
+        if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso! Contraseña incorrecta. Reclama 6 dígitos."); return; }
 
-        if(!esPasswordValido(nuevaPass)) {
-            alert("❌ ¡Aviso del Sistema! La cuenta no ha sido modificada. La nueva contraseña debe tener exactamente 6 dígitos numéricos.");
-            return; 
-        }
-
-        const payload = {
-            password: nuevaPass,
-            emoji: nuevoEmoji,
-            loggedOnce: true 
-        };
-
-        await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, payload);
+        await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, { password: nuevaPass, emoji: nuevoEmoji, loggedOnce: true });
         modalRecoveryPanel.style.display = "none";
-        alert(`✔️ Cuenta de ${nuevoNombre} restablecida correctamente en Firebase.`);
+        alert(`✔️ Cuenta de ${nuevoNombre} restablecida.`);
     });
 
     initUI();
 
-    // LOGIN DE USUARIOS
+    // LOGIN
     document.getElementById('btn-login').addEventListener('click', async () => {
         const user = selectedUserLogin;
         const pass = document.getElementById('login-password').value.trim();
@@ -1021,9 +1081,7 @@
             nombreUsuarioEnRecuperacion = user;
             document.getElementById('login-password').value = "";
             document.getElementById('login-error').style.display = "none";
-            
             await verficarChatGrupalPermanente();
-
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
             listenToGroups();
@@ -1032,20 +1090,14 @@
             document.getElementById('rec-username').value = user;
             document.getElementById('rec-password').value = cuentaExiste ? cuentaExiste.password : "";
             document.getElementById('rec-emoji').value = cuentaExiste ? (cuentaExiste.emoji || "😀") : "😀";
-            
             modalRecoveryPanel.style.display = "flex";
 
         } else if (cuentaExiste && cuentaExiste.password === pass) {
             currentUser = user;
             document.getElementById('login-password').value = "";
             document.getElementById('login-error').style.display = "none";
-            
-            if (!cuentaExiste.loggedOnce) {
-                await update(ref(db, `users/${user}`), { loggedOnce: true });
-            }
-
+            if (!cuentaExiste.loggedOnce) await update(ref(db, `users/${user}`), { loggedOnce: true });
             await verficarChatGrupalPermanente();
-
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
             listenToGroups();
@@ -1071,11 +1123,24 @@
                     if (groupData.members && groupData.members[currentUser]) {
                         let div = document.createElement('div');
                         div.className = `group-item ${groupId === activeGroupId ? 'active-group' : ''}`;
+                        
+                        let groupNameDisplay = groupData.name;
                         let emojiIcon = groupData.icon || "💬";
-                        div.innerHTML = `<span class="group-name">${emojiIcon} ${groupData.name}</span>`;
+
+                        // Formatear los chats 1-on-1 privados para mostrar el nombre e icono de la otra persona
+                        if (groupData.isPrivateChat) {
+                            const otherUser = Object.keys(groupData.members).find(m => m !== currentUser);
+                            if (otherUser) {
+                                const otherUserData = cacheUsuarios[otherUser] || {};
+                                groupNameDisplay = `${otherUser} (Privado)`;
+                                emojiIcon = otherUserData.emoji || "🔒";
+                            }
+                        }
+
+                        div.innerHTML = `<span class="group-name">${emojiIcon} ${groupNameDisplay}</span>`;
                         div.addEventListener('click', () => {
                             toggleSidebar(false);
-                            openChat(groupId, `${emojiIcon} ${groupData.name}`);
+                            openChat(groupId, `${emojiIcon} ${groupNameDisplay}`);
                         });
                         groupsContainer.appendChild(div);
                     }
@@ -1087,7 +1152,6 @@
     document.getElementById('btn-create-group').addEventListener('click', async () => {
         const groupName = document.getElementById('new-group-name').value.trim();
         if (!groupName) return alert("Escribe el nombre del grupo");
-        if (groupName.toLowerCase() === "chat grupal") return alert("El 'Chat Grupal' ya existe.");
 
         let members = {};
         let hosts = {};
@@ -1096,7 +1160,6 @@
         document.querySelectorAll('.member-row').forEach(row => {
             const chkMember = row.querySelector('.chk-member');
             const chkHost = row.querySelector('.chk-host');
-            
             if (chkMember && chkMember.value === currentUser) {
                 if (chkHost && chkHost.checked) hosts[currentUser] = true;
             } else if (chkMember && chkMember.checked && !chkMember.disabled) {
@@ -1106,19 +1169,13 @@
         });
 
         if (Object.keys(hosts).length === 0) {
-            alert("⚠️ ¡Obligatorio! Tienes que marcar al menos a un usuario (puedes ser tú mismo) como 'Admin' para crear el grupo.");
+            alert("⚠️ Debes marcar al menos un 'Admin' para el grupo.");
             return;
         }
 
         try {
             const newGroupRef = push(ref(db, 'groups'));
-            await set(newGroupRef, { 
-                name: groupName, 
-                icon: "💬", 
-                members: members,
-                hosts: hosts
-            });
-            
+            await set(newGroupRef, { name: groupName, icon: "💬", members: members, hosts: hosts });
             document.getElementById('new-group-name').value = "";
             modalCreate.style.display = "none";
         } catch(e) { console.error(e); }
@@ -1126,9 +1183,9 @@
 
     async function cambiarIconoGrupoFirebase(emojiElegido) {
         if(!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
+        if(cacheGrupos[activeGroupId].isPrivateChat) return;
         try {
-            const groupRef = ref(db, `groups/${activeGroupId}`);
-            await update(groupRef, { icon: emojiElegido });
+            await update(ref(db, `groups/${activeGroupId}`), { icon: emojiElegido });
             modalSettings.style.display = "none";
             txtChatTitle.textContent = `${emojiElegido} ${cacheGrupos[activeGroupId].name}`;
         } catch(e) { console.error(e); }
@@ -1142,11 +1199,13 @@
         sendBtn.disabled = false;
         btnOpenSettings.style.display = "block";
         
-        // ACTIVAR BOTONES DE ADJUNTOS AL SELECCIONAR CHAT
         btnAttachImage.disabled = false;
+        btnAttachVideo.disabled = false;
         btnRecordAudio.disabled = false;
+        btnGroupCall.style.display = "block";
 
         if (chatListener) chatListener();
+        escucharLlamadasPorGrupo(groupId);
 
         const messagesRef = query(ref(db, `groups/${groupId}/messages`), limitToLast(100));
         let lastRenderedDate = "";
@@ -1180,15 +1239,16 @@
                     
                     const elRemitenteEsAnfitrion = misAnfitriones[data.user] === true;
                     const tagAnfitrion = elRemitenteEsAnfitrion ? ' <span style="color:#d32f2f; font-size:9px; font-weight:bold;">[Anfitrión]</span>' : '';
-
                     let timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-                    // LÓGICA DE DETECCIÓN DE TIPOS DE CONTENIDO (TEXTO / FOTO / AUDIO)
+                    // GESTIÓN Y RENDERIZACIÓN DE TEXTO / IMAGENES / AUDIOS / VÍDEOS NATIVOS
                     let messageContentHtml = `<div>${data.text}</div>`;
                     if (data.type === 'image') {
                         messageContentHtml = `<img src="${data.mediaUrl || data.text}" style="max-width: 100%; max-height: 250px; border-radius: 8px; display: block; margin-top: 5px; cursor: pointer;" onclick="window.open(this.src, '_blank')">`;
                     } else if (data.type === 'audio') {
                         messageContentHtml = `<audio controls src="${data.mediaUrl || data.text}" style="max-width: 100%; display: block; margin-top: 5px; font-size:12px;"></audio>`;
+                    } else if (data.type === 'video') {
+                        messageContentHtml = `<video controls src="${data.mediaUrl}" style="max-width: 100%; max-height: 250px; border-radius: 8px; display: block; margin-top: 5px; background: black;"></video>`;
                     }
 
                     msgDiv.innerHTML = `
@@ -1198,8 +1258,7 @@
                     `;
 
                     msgDiv.querySelector('.user-name').addEventListener('click', (e) => {
-                        const targetUser = e.currentTarget.getAttribute('data-username');
-                        openUserProfile(targetUser);
+                        openUserProfile(e.currentTarget.getAttribute('data-username'));
                     });
 
                     if (groupId !== 'chat_grupal_fijo' && (data.user === currentUser || soyAnfitrion)) {
@@ -1227,132 +1286,179 @@
         if (!text || !activeGroupId) return;
         try {
             await push(ref(db, `groups/${activeGroupId}/messages`), {
-                user: currentUser,
-                text: text,
-                type: "text",
-                timestamp: serverTimestamp()
+                user: currentUser, text: text, type: "text", timestamp: serverTimestamp()
             });
-            messageInput.value = "";
-            messageInput.focus();
+            messageInput.value = ""; messageInput.focus();
         } catch(e) { console.error(e); }
     }
 
-    // LÓGICA DE SUBIDA Y COMPRESIÓN EFICIENTE DE IMÁGENES
-    btnAttachImage.addEventListener('click', () => {
-        hiddenImageInput.click();
-    });
-
+    // MANEJO DE IMÁGENES
+    btnAttachImage.addEventListener('click', () => { hiddenImageInput.click(); });
     hiddenImageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function (event) {
             const img = new Image();
             img.src = event.target.result;
             img.onload = function () {
-                // Configurar Canvas para comprimir la imagen de forma inteligente
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                const MAX_HEIGHT = 600;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
+                const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
+                let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-
-                // Convertir a JPEG con compresión del 70% de calidad para no saturar Firebase
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-
+                
                 push(ref(db, `groups/${activeGroupId}/messages`), {
-                    user: currentUser,
-                    text: "[Foto]",
-                    type: "image",
-                    mediaUrl: compressedBase64,
-                    timestamp: serverTimestamp()
-                }).catch(err => console.error(err));
-
-                hiddenImageInput.value = ""; // Limpiar el input
+                    user: currentUser, text: "[Foto]", type: "image", mediaUrl: canvas.toDataURL('image/jpeg', 0.7), timestamp: serverTimestamp()
+                });
+                hiddenImageInput.value = "";
             };
         };
     });
 
-    // LÓGICA DE AUDIO DE VOZ PROFESIONAL CON MEDIARECORDER API
+    // LÓGICA DE SUBIDA DE VÍDEOS CON FILTRO DE CAPACIDAD INTEGRADO
+    btnAttachVideo.addEventListener('click', () => { hiddenVideoInput.click(); });
+    hiddenVideoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Limite preventivo de 12 MB para evitar desborde Base64 en Firebase Realtime DB
+        if (file.size > 12 * 1024 * 1024) {
+            alert("⚠️ El archivo de vídeo seleccionado excede la capacidad recomendada para este canal (Máx. 12 MB). Por favor comprímelo o acórtalo.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (event) {
+            push(ref(db, `groups/${activeGroupId}/messages`), {
+                user: currentUser,
+                text: "[Vídeo]",
+                type: "video",
+                mediaUrl: event.target.result,
+                timestamp: serverTimestamp()
+            }).catch(err => console.error(err));
+            hiddenVideoInput.value = "";
+        };
+    });
+
+    // GRABACIÓN DE AUDIO DE VOZ
     btnRecordAudio.addEventListener('click', async () => {
         if (!isRecording) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
+                mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
                     const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
+                    reader.readAsDataURL(new Blob(audioChunks, { type: 'audio/mp3' }));
                     reader.onloadend = () => {
-                        const base64Audio = reader.result;
                         push(ref(db, `groups/${activeGroupId}/messages`), {
-                            user: currentUser,
-                            text: "[Audio de voz]",
-                            type: "audio",
-                            mediaUrl: base64Audio,
-                            timestamp: serverTimestamp()
-                        }).catch(err => console.error(err));
+                            user: currentUser, text: "[Audio de voz]", type: "audio", mediaUrl: reader.result, timestamp: serverTimestamp()
+                        });
                     };
-                    
-                    // Apagar micrófono al terminar
                     stream.getTracks().forEach(track => track.stop());
                 };
-
                 mediaRecorder.start();
                 isRecording = true;
                 btnRecordAudio.textContent = "🛑";
                 btnRecordAudio.style.color = "red";
-                messageInput.placeholder = "🎙️ Grabando audio de voz... ¡Pulsa el botón rojo para enviar!";
+                messageInput.placeholder = "🎙️ Grabando voz... ¡Pulsa el botón rojo para enviar!";
                 messageInput.disabled = true;
-            } catch (err) {
-                alert("No se pudo acceder al micrófono o permiso denegado: " + err);
-            }
+            } catch (err) { alert("Acceso al micrófono denegado: " + err); }
         } else {
-            if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                mediaRecorder.stop();
-            }
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
             isRecording = false;
-            btnRecordAudio.textContent = "🎙️";
-            btnRecordAudio.style.color = "";
-            messageInput.placeholder = "Escribe un mensaje...";
-            messageInput.disabled = false;
-            messageInput.focus();
+            btnRecordAudio.textContent = "🎙️"; btnRecordAudio.style.color = "";
+            messageInput.placeholder = "Escribe un mensaje..."; messageInput.disabled = false; messageInput.focus();
         }
     });
 
+    // MÓDULO DE LLAMADAS GRUPALES CON SINK CRONOMETRADO EN FIREBASE
+    function escucharLlamadasPorGrupo(groupId) {
+        if (callStateListener) callStateListener();
+        const callRef = ref(db, `groups/${groupId}/call`);
+        
+        callStateListener = onValue(callRef, (snapshot) => {
+            if (snapshot.exists() && snapshot.val().active === true) {
+                const callData = snapshot.val();
+                activeCallGroupTracking = groupId;
+                
+                // Si ya estamos viendo la pantalla completa de llamada de este grupo, ocultar banner flotante
+                if (modalCallScreen.style.display === "flex") {
+                    callBanner.style.display = "none";
+                } else {
+                    callBannerText.textContent = `📞 Llamada en curso (Iniciada por ${callData.startedBy})`;
+                    callBanner.style.display = "flex";
+                }
+            } else {
+                callBanner.style.display = "none";
+                if (activeCallGroupTracking === groupId) {
+                    modalCallScreen.style.display = "none";
+                    clearInterval(callTimerInterval);
+                }
+            }
+        });
+    }
+
+    btnGroupCall.addEventListener('click', async () => {
+        if (!activeGroupId) return;
+        const callRef = ref(db, `groups/${activeGroupId}/call`);
+        await set(callRef, {
+            active: true,
+            startedBy: currentUser,
+            timestamp: serverTimestamp()
+        });
+        desplegarPantallaDeLlamadaActiva();
+    });
+
+    document.getElementById('btn-join-call').addEventListener('click', () => {
+        desplegarPantallaDeLlamadaActiva();
+    });
+
+    document.getElementById('btn-decline-call').addEventListener('click', () => {
+        callBanner.style.display = "none";
+    });
+
+    document.getElementById('btn-hangup').addEventListener('click', async () => {
+        if (activeCallGroupTracking) {
+            // Finalizar la llamada en la base de datos para toda la sala
+            await set(ref(db, `groups/${activeCallGroupTracking}/call`), { active: false });
+        }
+    });
+
+    function desplegarPantallaDeLlamadaActiva() {
+        callBanner.style.display = "none";
+        document.getElementById('call-screen-title').textContent = cacheGrupos[activeGroupId]?.name || "Llamada de grupo";
+        document.getElementById('call-screen-status').textContent = "Conexión de voz establecida de forma segura";
+        modalCallScreen.style.display = "flex";
+        
+        // Iniciar cronómetro visual nativo
+        let totalSegundos = 0;
+        const timerText = document.getElementById('call-timer');
+        timerText.textContent = "00:00";
+        clearInterval(callTimerInterval);
+        
+        callTimerInterval = setInterval(() => {
+            totalSegundos++;
+            let min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
+            let seg = String(totalSegundos % 60).padStart(2, '0');
+            timerText.textContent = `${min}:${seg}`;
+        }, 1000);
+    }
+
+    // SALIDA DE LA APP
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
-        currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
-        messageInput.disabled = true; sendBtn.disabled = true; messageInput.value = "";
-        btnAttachImage.disabled = true; btnRecordAudio.disabled = true;
-        txtChatTitle.textContent = "Selecciona un grupo";
-        btnOpenSettings.style.display = "none";
-        messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
+        if (callStateListener) callStateListener();
+        clearInterval(callTimerInterval);
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; activeCallGroupTracking = null;
+        desactivarInputsDeChat();
         toggleSidebar(false);
         renderLoginUsersGrid(); 
         scrChat.style.display = "none"; scrLogin.style.display = "flex";
