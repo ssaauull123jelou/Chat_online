@@ -265,20 +265,27 @@
         .msg.sent { background: #dcf8c6; align-self: flex-end; }
         .msg.received { background: #ffffff; align-self: flex-start; }
         
-        /* ENTRADA DE TEXTO */
+        /* ENTRADA DE TEXTO Y ADJUNTOS */
         .input-area { display: flex; padding: 10px; background: #f0f0f0; z-index: 2; align-items: center; }
-        .input-area input { flex: 1; margin: 0; border-radius: 20px; padding: 12px 15px; border: 1px solid #ccc; font-size: 15px; }
+        .input-area input[type="text"] { flex: 1; margin: 0; border-radius: 20px; padding: 12px 15px; border: 1px solid #ccc; font-size: 15px; }
         .input-area button {
             background: var(--primary-color); color: white; border: none;
             padding: 12px 20px; margin-left: 6px; border-radius: 20px; cursor: pointer; font-weight: bold;
         }
+        
+        /* ESTILO NUEVO PARA BOTONES DE ADJUNTOS */
+        .input-area button.btn-icon {
+            background: none !important; color: var(--primary-color) !important; border: none !important;
+            padding: 5px !important; margin: 0 4px 0 0 !important; border-radius: 0 !important;
+            cursor: pointer !important; font-weight: normal !important; width: auto !important; font-size: 22px !important;
+        }
+        .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
 
-    <!-- PANTALLA 1: LOGIN VISUAL -->
     <div class="login-screen" id="scr-login">
         <h2>Entrar a Chat-simple</h2>
         <div class="login-subtitle">Selecciona tu usuario para acceder:</div>
@@ -292,10 +299,8 @@
         <button class="btn-primary" id="btn-login">Acceder</button>
     </div>
 
-    <!-- PANTALLA 2: CHAT PRINCIPAL -->
     <div class="chat-screen" id="scr-chat">
         
-        <!-- MENÚ LATERAL (SIDEBAR) -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span style="font-weight:bold;">Mis Grupos Privados</span>
@@ -310,7 +315,6 @@
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-        <!-- MODAL 1: CREAR GRUPO -->
         <div class="modal-screen" id="modal-create-group">
             <div class="modal-header">
                 <h3 style="margin:0;">Crear Grupo Nuevo</h3>
@@ -324,7 +328,6 @@
             </div>
         </div>
 
-        <!-- MODAL 2: AJUSTES DINÁMICOS DE GRUPO -->
         <div class="modal-screen" id="modal-settings-group">
             <div class="modal-header">
                 <h3 style="margin:0;" id="settings-modal-title">Ajustes del Grupo</h3>
@@ -347,13 +350,11 @@
                 <div class="admin-section-title" id="lbl-members-title">Integrantes</div>
                 <div id="admin-members-list" style="max-height: 250px; overflow-y: auto; border:1px solid #ccc; border-radius:8px; padding:5px; background:#fafafa; margin-bottom:15px;"></div>
 
-                <!-- BOTÓN PARA SALIR DEL GRUPO EN CURSO -->
                 <button class="btn-primary" id="btn-leave-group" style="background-color: #f44336; font-weight: bold; display: none; margin-top: 10px;">🚪 Salir del Grupo</button>
 
             </div>
         </div>
 
-        <!-- MODAL 3: PERFIL DE OTROS USUARIOS -->
         <div class="modal-screen" id="modal-user-profile">
             <div class="modal-header">
                 <h3 style="margin:0;">Perfil de Usuario</h3>
@@ -362,14 +363,13 @@
             <div class="modal-body" style="text-align: center;">
                 <div id="prof-avatar" style="font-size: 65px; margin: 20px 0 10px 0; user-select: none;">👤</div>
                 <h2 id="prof-name" style="margin: 0 0 5px 0; color: var(--primary-color);">Nombre</h2>
-                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:20px;">Miembro del sistema</div>
+                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:20px;">Miembro del systema</div>
                 
                 <div class="admin-section-title" style="text-align: left;">Grupos en común</div>
                 <div id="prof-common-groups" style="text-align: left; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; max-height: 220px; overflow-y: auto;"></div>
             </div>
         </div>
 
-        <!-- MODAL 4: AJUSTES DE MI PROPIO PERFIL -->
         <div class="modal-screen" id="modal-my-profile">
             <div class="modal-header">
                 <h3 style="margin:0;">Ajustes de mi Perfil</h3>
@@ -391,7 +391,6 @@
             </div>
         </div>
 
-        <!-- MODAL 5: PANEL DE RECUPERACIÓN AVANZADO -->
         <div class="modal-screen" id="modal-recovery-panel">
             <div class="modal-header">
                 <h3 style="margin:0;">Panel de Recuperación Maestro</h3>
@@ -414,7 +413,6 @@
             </div>
         </div>
 
-        <!-- ENCABEZADO DE LA VENTANA DE CHAT -->
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
@@ -426,13 +424,14 @@
             </div>
         </div>
 
-        <!-- CONTENEDOR DE MENSAJES -->
         <div class="messages-box" id="messages-box">
             <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
         </div>
 
-        <!-- SECCIÓN DE ENVIAR -->
         <div class="input-area">
+            <input type="file" id="hidden-image-input" accept="image/*" style="display: none;">
+            <button id="btn-attach-image" class="btn-icon" title="Enviar Foto" disabled>📷</button>
+            <button id="btn-record-audio" class="btn-icon" title="Grabar Audio de Voz" disabled>🎙️</button>
             <input type="text" id="message-input" placeholder="Escribe un mensaje..." autocomplete="off" disabled>
             <button id="send-btn" disabled>Enviar</button>
         </div>
@@ -490,6 +489,11 @@
     let nombreUsuarioEnRecuperacion = ""; 
     let selectedUserLogin = ""; 
 
+    // VARIABLES NUEVAS DE GRABACIÓN
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
     const sidebar = document.getElementById('sidebar');
@@ -506,6 +510,11 @@
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
+
+    // NUEVOS ELEMENTOS DOM
+    const btnAttachImage = document.getElementById('btn-attach-image');
+    const btnRecordAudio = document.getElementById('btn-record-audio');
+    const hiddenImageInput = document.getElementById('hidden-image-input');
 
     function initUI() {
         generarBancoEmojis();
@@ -579,7 +588,7 @@
                     batch[`groups/${gId}/members/${nombreViejo}`] = null;
                     requiereCambio = true;
                 }
-                if (grupo.hosts && grupo.hosts[nombreViejo]) {
+                if (grupo.hosts && group.hosts[nombreViejo]) {
                     batch[`groups/${gId}/hosts/${nombreNuevo}`] = true;
                     batch[`groups/${gId}/hosts/${nombreViejo}`] = null;
                     requiereCambio = true;
@@ -646,7 +655,6 @@
             row.className = 'manage-member-row';
             let tagRole = isHost ? ' <span style="color:#d32f2f; font-size:11px; font-weight:bold;">[Anfitrión]</span>' : '';
             
-            // Generar el nombre con estilo dinámico si no tiene cuenta activa
             let displayName = nombre === currentUser ? `<b>${nombre}</b>` : nombre;
             if (!cuentaActiva) {
                 displayName = `<span style="color:#aaa; text-decoration:line-through;">${nombre} (sin cuenta)</span>`;
@@ -667,7 +675,6 @@
                     let btnHostText = isHost ? "⬇️ Quitar Admin" : "👑 Hacer Admin";
                     let btnHostBg = isHost ? "#ff9800" : "#009688";
                     
-                    // Bloqueos si estamos en el chat permanente de todos
                     let renderBtnHost = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
                     let renderBtnKick = activeGroupId === 'chat_grupal_fijo' ? '' : `<button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
                     
@@ -867,9 +874,8 @@
 
         inputName.value = infoGrupo.name || "";
 
-        // Ocultar o mostrar botón de salida según corresponda
         if (activeGroupId === 'chat_grupal_fijo') {
-            btnLeaveGroup.style.display = "none"; // Nadie se va del general de todos
+            btnLeaveGroup.style.display = "none"; 
         } else {
             btnLeaveGroup.style.display = "block"; 
         }
@@ -903,7 +909,6 @@
         modalSettings.style.display = "none";
     });
 
-    // LÓGICA DE ABANDONAR EL GRUPO VOLUNTARIAMENTE
     document.getElementById('btn-leave-group').addEventListener('click', async () => {
         if (!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
         
@@ -912,7 +917,6 @@
             const hosts = infoGrupo.hosts || {};
             const members = infoGrupo.members || {};
 
-            // Validación de huérfanos: si eres admin y hay más miembros, delega el mando antes.
             if (hosts[currentUser] && Object.keys(hosts).length === 1 && Object.keys(members).length > 1) {
                 alert("⚠️ Error: Eres el único administrador. Nomina a otro integrante como 'Admin' en la lista antes de proceder a salir.");
                 return;
@@ -928,6 +932,8 @@
                 activeGroupId = "";
                 messageInput.disabled = true;
                 sendBtn.disabled = true;
+                btnAttachImage.disabled = true;
+                btnRecordAudio.disabled = true;
                 messageInput.value = "";
                 txtChatTitle.textContent = "Selecciona un grupo";
                 btnOpenSettings.style.display = "none";
@@ -1135,6 +1141,10 @@
         messageInput.disabled = false;
         sendBtn.disabled = false;
         btnOpenSettings.style.display = "block";
+        
+        // ACTIVAR BOTONES DE ADJUNTOS AL SELECCIONAR CHAT
+        btnAttachImage.disabled = false;
+        btnRecordAudio.disabled = false;
 
         if (chatListener) chatListener();
 
@@ -1173,9 +1183,17 @@
 
                     let timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
+                    // LÓGICA DE DETECCIÓN DE TIPOS DE CONTENIDO (TEXTO / FOTO / AUDIO)
+                    let messageContentHtml = `<div>${data.text}</div>`;
+                    if (data.type === 'image') {
+                        messageContentHtml = `<img src="${data.mediaUrl || data.text}" style="max-width: 100%; max-height: 250px; border-radius: 8px; display: block; margin-top: 5px; cursor: pointer;" onclick="window.open(this.src, '_blank')">`;
+                    } else if (data.type === 'audio') {
+                        messageContentHtml = `<audio controls src="${data.mediaUrl || data.text}" style="max-width: 100%; display: block; margin-top: 5px; font-size:12px;"></audio>`;
+                    }
+
                     msgDiv.innerHTML = `
                         <span class="user-name" data-username="${data.user}">${data.user}${tagAnfitrion}</span>
-                        <div>${data.text}</div>
+                        ${messageContentHtml}
                         <span class="msg-time">${timeStr}</span>
                     `;
 
@@ -1211,6 +1229,7 @@
             await push(ref(db, `groups/${activeGroupId}/messages`), {
                 user: currentUser,
                 text: text,
+                type: "text",
                 timestamp: serverTimestamp()
             });
             messageInput.value = "";
@@ -1218,10 +1237,119 @@
         } catch(e) { console.error(e); }
     }
 
+    // LÓGICA DE SUBIDA Y COMPRESIÓN EFICIENTE DE IMÁGENES
+    btnAttachImage.addEventListener('click', () => {
+        hiddenImageInput.click();
+    });
+
+    hiddenImageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function () {
+                // Configurar Canvas para comprimir la imagen de forma inteligente
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                const MAX_HEIGHT = 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convertir a JPEG con compresión del 70% de calidad para no saturar Firebase
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                push(ref(db, `groups/${activeGroupId}/messages`), {
+                    user: currentUser,
+                    text: "[Foto]",
+                    type: "image",
+                    mediaUrl: compressedBase64,
+                    timestamp: serverTimestamp()
+                }).catch(err => console.error(err));
+
+                hiddenImageInput.value = ""; // Limpiar el input
+            };
+        };
+    });
+
+    // LÓGICA DE AUDIO DE VOZ PROFESIONAL CON MEDIARECORDER API
+    btnRecordAudio.addEventListener('click', async () => {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        const base64Audio = reader.result;
+                        push(ref(db, `groups/${activeGroupId}/messages`), {
+                            user: currentUser,
+                            text: "[Audio de voz]",
+                            type: "audio",
+                            mediaUrl: base64Audio,
+                            timestamp: serverTimestamp()
+                        }).catch(err => console.error(err));
+                    };
+                    
+                    // Apagar micrófono al terminar
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                btnRecordAudio.textContent = "🛑";
+                btnRecordAudio.style.color = "red";
+                messageInput.placeholder = "🎙️ Grabando audio de voz... ¡Pulsa el botón rojo para enviar!";
+                messageInput.disabled = true;
+            } catch (err) {
+                alert("No se pudo acceder al micrófono o permiso denegado: " + err);
+            }
+        } else {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            btnRecordAudio.textContent = "🎙️";
+            btnRecordAudio.style.color = "";
+            messageInput.placeholder = "Escribe un mensaje...";
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+    });
+
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
         currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
         messageInput.disabled = true; sendBtn.disabled = true; messageInput.value = "";
+        btnAttachImage.disabled = true; btnRecordAudio.disabled = true;
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
         messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
