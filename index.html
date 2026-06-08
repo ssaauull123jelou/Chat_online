@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat-simple Pro</title>
+    <title>Chat_Online</title>
     <style>
         :root {
             --primary-color: #075e54;
@@ -194,7 +194,24 @@
         }
         .group-item:hover { background: #f0f2f5; }
         .group-item.active-group { background: #e1f5fe; color: var(--primary-color); }
-        .group-name { font-weight: bold; font-size: 14px; }
+        .group-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
+
+        /* GLOBO DE MENSAJES SIN LEER ESTILO WHATSAPP */
+        .unread-badge {
+            background: #25d366;
+            color: white;
+            border-radius: 50%;
+            min-width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px;
+            box-sizing: border-box;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
 
         .sidebar-footer {
             padding: 12px; border-top: 1px solid #ddd; background: #f9f9f9;
@@ -300,6 +317,11 @@
             animation: avatarPulse 1.8s infinite ease-in-out;
             background: rgba(255,255,255,0.1); border-radius: 50%; padding: 25px;
         }
+
+        /* Animación suave para desplegar el correo */
+        #my-profile-email-input {
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -307,7 +329,7 @@
 <div class="app-container">
 
     <div class="login-screen" id="scr-login">
-        <h2>Entrar a Chat-simple</h2>
+        <h2>Entrar a Chat_Online</h2>
         <div class="login-subtitle">Selecciona tu usuario para acceder:</div>
         <div class="error-msg" id="login-error">Contraseña incorrecta o usuario no seleccionado.</div>
         
@@ -390,7 +412,7 @@
             <div class="modal-body" style="text-align: center;">
                 <div id="prof-avatar" style="font-size: 65px; margin: 20px 0 10px 0; user-select: none;">👤</div>
                 <h2 id="prof-name" style="margin: 0 0 5px 0; color: var(--primary-color);">Nombre</h2>
-                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:15px;">Miembro del systema</div>
+                <div id="prof-subtext" style="font-size: 13px; color:#777; margin-bottom:15px;">Miembro del sistema</div>
                 
                 <button class="btn-primary" id="btn-start-private-chat" style="margin-bottom: 20px; background-color: var(--secondary-color); font-size: 15px;">💬 Iniciar Chat Privado</button>
 
@@ -415,6 +437,14 @@
                 
                 <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Cambiar mi Emoji / Icono:</label>
                 <input type="text" id="my-profile-emoji" placeholder="Ej: 🦊" style="font-size: 22px; text-align: center; width: 80px; margin: 5px auto; display: block;">
+
+                <div class="admin-section-title">Notificaciones Externas</div>
+                <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0 10px 0; cursor: pointer; font-size: 14px; font-weight: 500; color: #333;">
+                    <input type="checkbox" id="my-profile-email-notif" style="width: auto; margin: 0; transform: scale(1.2);">
+                    Recibir notificaciones por correo de mensajes sin leer
+                </label>
+                
+                <input type="email" id="my-profile-email-input" placeholder="Introduce tu dirección de correo (ej: correo@correo.correo)" style="display: none;">
 
                 <button class="btn-primary" id="btn-save-my-profile" style="margin-top: 20px;">Guardar Cambios</button>
             </div>
@@ -577,6 +607,22 @@
     function initUI() {
         generarBancoEmojis();
         sincronizarYEscucharUsuarios();
+        configurarEventosPerfilDinamico();
+    }
+
+    // Evento para mostrar/ocultar el input de correo en tiempo real
+    function configurarEventosPerfilDinamico() {
+        const checkboxNotif = document.getElementById('my-profile-email-notif');
+        const inputEmail = document.getElementById('my-profile-email-input');
+        
+        checkboxNotif.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                inputEmail.style.display = "block";
+                inputEmail.focus();
+            } else {
+                inputEmail.style.display = "none";
+            }
+        });
     }
 
     function sincronizarYEscucharUsuarios() {
@@ -588,13 +634,19 @@
                     inicialBD[nombre] = {
                         password: usuariosPermitidosPredefinidos[nombre],
                         emoji: "😀", 
-                        loggedOnce: false 
+                        loggedOnce: false,
+                        emailNotifications: false,
+                        email: "",
+                        lastRead: {}
                     };
                 });
                 set(usersRef, inicialBD);
             } else {
                 cacheUsuarios = snapshot.val();
                 renderLoginUsersGrid();
+                if (currentUser) {
+                    listenToGroups();
+                }
             }
         });
     }
@@ -793,7 +845,6 @@
         const datosUser = cacheUsuarios[targetUser] || {};
         document.getElementById('prof-avatar').textContent = datosUser.emoji || "😀";
 
-        // Mostrar u ocultar botón de chat privado según corresponda (no chatear con uno mismo)
         if (targetUser === currentUser) {
             document.getElementById('btn-start-private-chat').style.display = "none";
         } else {
@@ -822,7 +873,6 @@
         modalProfile.style.display = "flex";
     }
 
-    // LÓGICA DE DETECCIÓN E INICIACIÓN DE CHATS PRIVADOS (1-ON-1)
     document.getElementById('btn-start-private-chat').addEventListener('click', async () => {
         const targetUser = targetUserProfileName;
         if (!targetUser || targetUser === currentUser) return;
@@ -861,7 +911,7 @@
         bloquesEmoji.forEach(bloque => {
             for (let i = Math.min(bloque.start, bloque.end); i <= Math.max(bloque.start, bloque.end); i++) {
                 let emoji = String.fromCodePoint(i);
-                listaCompletaEmojis.push({ char: emoji, cat: bloque.cat });
+                listaCompletaEmojis.push({ char: emoji, cat: bloquesEmoji.cat });
             }
         });
         renderizarEmojis(listaCompletaEmojis);
@@ -939,6 +989,15 @@
         document.getElementById('my-profile-name').value = currentUser;
         document.getElementById('my-profile-pass').value = misDatos.password || "";
         document.getElementById('my-profile-emoji').value = misDatos.emoji || "😀";
+        
+        // Carga de la preferencia y del correo guardado
+        const tieneNotifEmail = misDatos.emailNotifications === true;
+        document.getElementById('my-profile-email-notif').checked = tieneNotifEmail;
+        
+        const inputEmail = document.getElementById('my-profile-email-input');
+        inputEmail.value = misDatos.email || "";
+        inputEmail.style.display = tieneNotifEmail ? "block" : "none";
+
         modalMyProfile.style.display = "flex";
     });
 
@@ -1038,11 +1097,28 @@
     document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
         const nuevaPass = document.getElementById('my-profile-pass').value.trim();
         const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "😀";
+        const emailNotif = document.getElementById('my-profile-email-notif').checked;
+        const nuevoCorreo = document.getElementById('my-profile-email-input').value.trim();
         
         if(!nuevaPass) { alert("⚠️ Error: El campo de contraseña no puede quedar vacío."); return; }
         if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso de Seguridad! La contraseña debe tener exactamente 6 números."); return; }
         
-        await procesarCambioNombreUsuario(currentUser, currentUser, { password: nuevaPass, emoji: nuevoEmoji, loggedOnce: true });
+        // Validación obligatoria si la casilla está activa
+        if (emailNotif && !nuevoCorreo) {
+            alert("⚠️ Error: Has activado las notificaciones por correo electrónico, debes escribir una dirección de correo válida.");
+            document.getElementById('my-profile-email-input').focus();
+            return;
+        }
+        
+        const misDatos = cacheUsuarios[currentUser] || {};
+        await procesarCambioNombreUsuario(currentUser, currentUser, { 
+            password: nuevaPass, 
+            emoji: nuevoEmoji, 
+            loggedOnce: true,
+            emailNotifications: emailNotif,
+            email: emailNotif ? nuevoCorreo : (misDatos.email || ""), // Guarda el correo si está activo
+            lastRead: misDatos.lastRead || {}
+        });
         modalMyProfile.style.display = "none";
         alert("✔️ Tu perfil se ha actualizado con éxito.");
     });
@@ -1055,7 +1131,15 @@
         if(!nuevoNombre || !nuevaPass) { alert("⚠️ Error: Campos obligatorios."); return; }
         if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso! Contraseña incorrecta. Reclama 6 dígitos."); return; }
 
-        await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, { password: nuevaPass, emoji: nuevoEmoji, loggedOnce: true });
+        const datosViejos = cacheUsuarios[nombreUsuarioEnRecuperacion] || {};
+        await procesarCambioNombreUsuario(nombreUsuarioEnRecuperacion, nuevoNombre, { 
+            password: nuevaPass, 
+            emoji: nuevoEmoji, 
+            loggedOnce: true,
+            emailNotifications: datosViejos.emailNotifications || false,
+            email: datosViejos.email || "",
+            lastRead: datosViejos.lastRead || {}
+        });
         modalRecoveryPanel.style.display = "none";
         alert(`✔️ Cuenta de ${nuevoNombre} restablecida.`);
     });
@@ -1108,6 +1192,7 @@
         }
     });
 
+    // SISTEMA COMPLETO DE CONTEO DE MENSAJES SIN LEER
     function listenToGroups() {
         const groupsRef = ref(db, 'groups');
         onValue(groupsRef, (snapshot) => {
@@ -1115,6 +1200,8 @@
             cacheGrupos = {};
 
             if (snapshot.exists()) {
+                const lastReadData = cacheUsuarios[currentUser]?.lastRead || {};
+
                 snapshot.forEach(child => {
                     const groupId = child.key;
                     const groupData = child.val();
@@ -1127,7 +1214,6 @@
                         let groupNameDisplay = groupData.name;
                         let emojiIcon = groupData.icon || "💬";
 
-                        // Formatear los chats 1-on-1 privados para mostrar el nombre e icono de la otra persona
                         if (groupData.isPrivateChat) {
                             const otherUser = Object.keys(groupData.members).find(m => m !== currentUser);
                             if (otherUser) {
@@ -1137,7 +1223,23 @@
                             }
                         }
 
-                        div.innerHTML = `<span class="group-name">${emojiIcon} ${groupNameDisplay}</span>`;
+                        // Calcular contador de mensajes sin leer
+                        let unreadCount = 0;
+                        if (groupData.messages && groupId !== activeGroupId) {
+                            const lastReadTime = lastReadData[groupId] || 0;
+                            Object.values(groupData.messages).forEach(msg => {
+                                if (msg.timestamp > lastReadTime && msg.user !== currentUser) {
+                                    unreadCount++;
+                                }
+                            });
+                        }
+
+                        let badgeHtml = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
+
+                        div.innerHTML = `
+                            <span class="group-name">${emojiIcon} ${groupNameDisplay}</span>
+                            ${badgeHtml}
+                        `;
                         div.addEventListener('click', () => {
                             toggleSidebar(false);
                             openChat(groupId, `${emojiIcon} ${groupNameDisplay}`);
@@ -1207,6 +1309,11 @@
         if (chatListener) chatListener();
         escucharLlamadasPorGrupo(groupId);
 
+        // Marcar sala como leída instantáneamente al abrirse
+        if (currentUser) {
+            set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
+        }
+
         const messagesRef = query(ref(db, `groups/${groupId}/messages`), limitToLast(100));
         let lastRenderedDate = "";
 
@@ -1241,7 +1348,6 @@
                     const tagAnfitrion = elRemitenteEsAnfitrion ? ' <span style="color:#d32f2f; font-size:9px; font-weight:bold;">[Anfitrión]</span>' : '';
                     let timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
-                    // GESTIÓN Y RENDERIZACIÓN DE TEXTO / IMAGENES / AUDIOS / VÍDEOS NATIVOS
                     let messageContentHtml = `<div>${data.text}</div>`;
                     if (data.type === 'image') {
                         messageContentHtml = `<img src="${data.mediaUrl || data.text}" style="max-width: 100%; max-height: 250px; border-radius: 8px; display: block; margin-top: 5px; cursor: pointer;" onclick="window.open(this.src, '_blank')">`;
@@ -1275,6 +1381,11 @@
                     messagesBox.appendChild(msgDiv);
                 });
                 messagesBox.scrollTop = messagesBox.scrollHeight;
+
+                // Actualizar marca de tiempo mientras se permanece en la sala abierta
+                if (activeGroupId === groupId && currentUser) {
+                    set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
+                }
             } else {
                 messagesBox.innerHTML = `<div class="placeholder-text">Este grupo no tiene mensajes aún.</div>`;
             }
@@ -1320,13 +1431,12 @@
         };
     });
 
-    // LÓGICA DE SUBIDA DE VÍDEOS CON FILTRO DE CAPACIDAD INTEGRADO
+    // LÓGICA DE SUBIDA DE VÍDEOS
     btnAttachVideo.addEventListener('click', () => { hiddenVideoInput.click(); });
     hiddenVideoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Limite preventivo de 12 MB para evitar desborde Base64 en Firebase Realtime DB
         if (file.size > 12 * 1024 * 1024) {
             alert("⚠️ El archivo de vídeo seleccionado excede la capacidad recomendada para este canal (Máx. 12 MB). Por favor comprímelo o acórtalo.");
             return;
@@ -1379,7 +1489,7 @@
         }
     });
 
-    // MÓDULO DE LLAMADAS GRUPALES CON SINK CRONOMETRADO EN FIREBASE
+    // MÓDULO DE LLAMADAS GRUPALES
     function escucharLlamadasPorGrupo(groupId) {
         if (callStateListener) callStateListener();
         const callRef = ref(db, `groups/${groupId}/call`);
@@ -1389,7 +1499,6 @@
                 const callData = snapshot.val();
                 activeCallGroupTracking = groupId;
                 
-                // Si ya estamos viendo la pantalla completa de llamada de este grupo, ocultar banner flotante
                 if (modalCallScreen.style.display === "flex") {
                     callBanner.style.display = "none";
                 } else {
@@ -1427,7 +1536,6 @@
 
     document.getElementById('btn-hangup').addEventListener('click', async () => {
         if (activeCallGroupTracking) {
-            // Finalizar la llamada en la base de datos para toda la sala
             await set(ref(db, `groups/${activeCallGroupTracking}/call`), { active: false });
         }
     });
@@ -1438,7 +1546,6 @@
         document.getElementById('call-screen-status').textContent = "Conexión de voz establecida de forma segura";
         modalCallScreen.style.display = "flex";
         
-        // Iniciar cronómetro visual nativo
         let totalSegundos = 0;
         const timerText = document.getElementById('call-timer');
         timerText.textContent = "00:00";
