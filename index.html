@@ -217,9 +217,13 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
+        /* PIE DE MENÚ EN CUADRÍCULA 1X4 */
         .sidebar-footer {
             padding: 12px; border-top: 1px solid #ddd; background: #f9f9f9;
-            display: flex; flex-direction: column; gap: 6px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+        }
+        .sidebar-footer .btn-primary {
+            padding: 12px 0; font-size: 20px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
 
         .sidebar-overlay {
@@ -294,6 +298,7 @@
         /* ENTRADA DE TEXTO Y ADJUNTOS */
         .input-area { display: flex; padding: 10px; background: #f0f0f0; z-index: 2; align-items: center; }
         .input-area input[type="text"] { flex: 1; margin: 0; border-radius: 20px; padding: 12px 15px; border: 1px solid #ccc; font-size: 15px; }
+        .input-area input[type="text"]:disabled { background-color: #ffebee; color: #c62828; font-weight: bold; }
         .input-area button {
             background: var(--primary-color); color: white; border: none;
             padding: 12px 20px; margin-left: 6px; border-radius: 20px; cursor: pointer; font-weight: bold;
@@ -305,6 +310,19 @@
             cursor: pointer !important; font-weight: normal !important; width: auto !important; font-size: 22px !important;
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
+
+        /* ESTILOS NOTIFICACIONES Y AVISOS GLOBALES */
+        .system-notice-banner {
+            background: #d32f2f; color: white; padding: 10px 15px; text-align: center;
+            font-weight: bold; font-size: 13px; display: none; z-index: 3;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-sizing: border-box; word-wrap: break-word;
+        }
+        .notif-item {
+            background: #fff3cd; border-left: 5px solid #ff9800; padding: 12px;
+            border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 10px;
+        }
+        .notif-header { font-size: 11px; font-weight: bold; color: #a56b00; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .notif-body { font-size: 14px; color: #333; word-wrap: break-word; font-weight: 500; }
     </style>
 </head>
 <body>
@@ -334,12 +352,33 @@
             <div class="groups-list" id="groups-container"></div>
             
             <div class="sidebar-footer">
-                <button class="btn-primary" id="open-modal-my-profile" style="padding:10px; font-size:14px; background-color: var(--secondary-color);">👤 Ajustes de Mi Perfil</button>
-                <button class="btn-primary" id="open-modal-private" style="padding:10px; font-size:14px; background-color: #009688;">💬 Crear Chat Privado</button>
-                <button class="btn-primary" id="open-modal-create" style="padding:10px; font-size:14px;">➕ Crear Nuevo Grupo</button>
+                <button class="btn-primary" id="open-modal-notifications" style="position: relative; background-color: #ff9800;" title="Notificaciones Globales">
+                    📢<span id="notif-badge" class="unread-badge" style="display: none; position: absolute; top: -4px; right: -4px; background-color: #f44336; min-width: 16px; height: 16px; font-size: 10px; border: 1px solid white;">!</span>
+                </button>
+                <button class="btn-primary" id="open-modal-my-profile" style="background-color: var(--secondary-color);" title="Ajustes de mi Perfil">👤</button>
+                <button class="btn-primary" id="open-modal-private" style="background-color: #009688;" title="Crear Chat Privado">💬</button>
+                <button class="btn-primary" id="open-modal-create" style="background-color: var(--primary-color);" title="Crear Nuevo Grupo">➕</button>
             </div>
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <div class="modal-screen" id="modal-notifications">
+            <div class="modal-header" style="background-color: #e67e22;">
+                <h3 style="margin:0;">📢 Notificaciones del Sistema</h3>
+                <button class="sidebar-close-btn" id="close-modal-notifications">✕</button>
+            </div>
+            <div class="modal-body" style="background: #fdfefe; display: flex; flex-direction: column;">
+                <div id="notifications-box" style="flex:1; overflow-y:auto; padding:5px;">
+                    <div style="text-align:center; color:#777; font-size:13px; padding:20px;">Cargando notificaciones oficiales...</div>
+                </div>
+                
+                <div id="saul-notif-menu" style="display:none; padding:12px; border-top:2px solid #e67e22; background:#fef5ec; border-radius:8px; margin-top:10px;">
+                    <h5 style="margin:0 0 8px 0; color:#d35400; font-size:13px; text-transform:uppercase;">Panel Exclusivo de Saúl (Alertas y Actualizaciones)</h5>
+                    <input type="text" id="saul-notif-input" placeholder="Escribe un anuncio oficial..." style="margin:0 0 8px 0; font-size:14px; padding:10px;">
+                    <button class="btn-primary" id="btn-saul-send-notif" style="background:#e67e22; padding:10px; font-size:14px;">Publicar Notificación Oficial</button>
+                </div>
+            </div>
+        </div>
 
         <div class="modal-screen" id="modal-start-private">
             <div class="modal-header">
@@ -462,6 +501,8 @@
             </div>
         </div>
 
+        <div class="system-notice-banner" id="system-notice-banner"></div>
+
         <div class="messages-box" id="messages-box">
             <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
         </div>
@@ -525,17 +566,24 @@
     let currentUser = "";
     let activeGroupId = "";
     let chatListener = null;
+    let systemNotifListener = null;
+    let noticeBannerListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
     let nombreUsuarioEnRecuperacion = ""; 
     let selectedUserLogin = ""; 
     let targetUserProfileName = "";
+    let maxNotifTimestamp = 0; 
 
     // ADJUNTOS AUDIO
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
+
+    // CONTROL ANTISPAM Y BANEOS GLOBALES
+    let msgHistory = []; 
+    let banInterval = null;
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -547,6 +595,7 @@
     const sendBtn = document.getElementById('send-btn');
     const txtChatTitle = document.getElementById('txt-chat-title');
     const btnOpenSettings = document.getElementById('btn-open-settings');
+    const systemNoticeBanner = document.getElementById('system-notice-banner');
 
     const modalCreate = document.getElementById('modal-create-group');
     const modalSettings = document.getElementById('modal-settings-group');
@@ -555,6 +604,14 @@
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
     const modalStartPrivate = document.getElementById('modal-start-private');
     const privateUsersList = document.getElementById('private-users-list');
+    
+    // NOTIFICACIONES DOM
+    const modalNotifications = document.getElementById('modal-notifications');
+    const notificationsBox = document.getElementById('notifications-box');
+    const saulNotifMenu = document.getElementById('saul-notif-menu');
+    const saulNotifInput = document.getElementById('saul-notif-input');
+    const btnSaulSendNotif = document.getElementById('btn-saul-send-notif');
+    const notifBadge = document.getElementById('notif-badge');
 
     // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
@@ -578,18 +635,69 @@
                         password: usuariosPermitidosPredefinidos[nombre],
                         emoji: "😀", 
                         loggedOnce: false,
-                        lastRead: {}
+                        banCount: 0,
+                        banUntil: 0,
+                        warned: false,
+                        lastRead: {},
+                        lastReadNotif: 0
                     };
                 });
                 set(usersRef, inicialBD);
             } else {
                 cacheUsuarios = snapshot.val();
+                
+                // CONTROL DE SILENCIOS GLOBALES (BANEOS MUDOS PROGRESIVOS)
+                if (currentUser && cacheUsuarios[currentUser]) {
+                    const datosPropios = cacheUsuarios[currentUser];
+                    if (datosPropios.banUntil && Date.now() < datosPropios.banUntil) {
+                        iniciarMuteoGlobal();
+                    } else if (banInterval) {
+                        levantarMuteoGlobal();
+                    }
+                    comprobarGloboNotificaciones();
+                }
+
                 renderLoginUsersGrid();
                 if (currentUser) {
                     listenToGroups();
                 }
             }
         });
+    }
+
+    function iniciarMuteoGlobal() {
+        if (banInterval) clearInterval(banInterval);
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        btnAttachImage.disabled = true;
+        btnAttachVideo.disabled = true;
+        btnRecordAudio.disabled = true;
+
+        banInterval = setInterval(async () => {
+            const datosPropios = cacheUsuarios[currentUser] || {};
+            const timeLeft = datosPropios.banUntil - Date.now();
+            
+            if (timeLeft <= 0) {
+                levantarMuteoGlobal();
+            } else {
+                const mins = Math.floor(timeLeft / 60000);
+                const secs = Math.floor((timeLeft % 60000) / 1000);
+                messageInput.placeholder = `Sanción. Tiempo restante: ${mins}m ${secs}s`;
+            }
+        }, 1000);
+    }
+
+    function levantarMuteoGlobal() {
+        if (banInterval) clearInterval(banInterval);
+        banInterval = null;
+        if (activeGroupId) {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            btnAttachImage.disabled = false;
+            btnAttachVideo.disabled = false;
+            btnRecordAudio.disabled = false;
+            messageInput.placeholder = "Escribe un mensaje...";
+        }
     }
 
     function renderLoginUsersGrid() {
@@ -738,7 +846,11 @@
                     let btnHostBg = isHost ? "#ff9800" : "#009688";
                     
                     let renderBtnHost = (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
-                    let renderBtnKick = (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) ? '' : `<button class="btn-small-kick" data-user="${nombre}">❌ Expulsar</button>`;
+                    
+                    // BOTÓN DE BANEO SEVERO PROGRESIVO Y COMUNICADO PÚBLICO
+                    let currentBanCount = userData.banCount || 0;
+                    let proximoTiempoBan = Math.min((currentBanCount + 1) * 5, 50);
+                    let renderBtnKick = infoGrupo.isPrivateChat ? '' : `<button class="btn-small-kick" data-user="${nombre}" title="Silenciar globalmente: ${proximoTiempoBan} min">⚠️ Banear (${proximoTiempoBan}m)</button>`;
                     
                     row.innerHTML = `
                         <span>👤 ${displayName} ${tagRole}</span>
@@ -761,14 +873,38 @@
         });
 
         if (soyAnfitrion) {
+            // LÓGICA DE BANEO MANUAL (Boton Admin)
             container.querySelectorAll('.btn-small-kick').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const userToKick = e.target.getAttribute('data-user');
-                    if(confirm(`¿Expulsar a ${userToKick} del grupo?`)) {
-                        await remove(ref(db, `groups/${activeGroupId}/members/${userToKick}`));
-                        await remove(ref(db, `groups/${activeGroupId}/hosts/${userToKick}`)); 
-                        if(cacheGrupos[activeGroupId].members) delete cacheGrupos[activeGroupId].members[userToKick];
-                        if(cacheGrupos[activeGroupId].hosts) delete cacheGrupos[activeGroupId].hosts[userToKick];
+                    const targetUserData = cacheUsuarios[userToKick] || {};
+                    
+                    let totalBaneosPrevios = targetUserData.banCount || 0;
+                    totalBaneosPrevios++; 
+                    let minutosBaneo = Math.min(totalBaneosPrevios * 5, 50);
+                    
+                    if(confirm(`¿Aplicar SANCIÓN SEVERA a ${userToKick} y silenciarlo de toda la app durante ${minutosBaneo} minutos?\n(Sanción acumulada Nº ${totalBaneosPrevios})`)) {
+                        const banExpirationTimestamp = Date.now() + (minutosBaneo * 60000);
+                        
+                        // 1. Guardar penalización en Firebase
+                        await update(ref(db, `users/${userToKick}`), {
+                            banCount: totalBaneosPrevios,
+                            banUntil: banExpirationTimestamp
+                        });
+                        
+                        // 2. Registrar en la pestaña oficial de notificaciones para que todos se enteren
+                        await push(ref(db, 'system_notifications'), {
+                            text: `🚨 SANCIÓN OFICIAL: El usuario ${userToKick} ha sido silenciado/baneado temporalmente por ${minutosBaneo} minutos.`,
+                            timestamp: serverTimestamp()
+                        });
+
+                        // 3. Notificación Banner Rojo (Opcional, en sala actual)
+                        await set(ref(db, `groups/${activeGroupId}/notice`), {
+                            text: `⚖️ SANCIÓN: ¡${userToKick} ha sido silenciado por ${minutosBaneo} minutos!`,
+                            time: Date.now()
+                        });
+                        
+                        alert(`Se aplicó el baneo a ${userToKick} y todos los usuarios serán notificados.`);
                         renderAdminMembers(true); 
                     }
                 });
@@ -877,7 +1013,7 @@
         bloquesEmoji.forEach(bloque => {
             for (let i = Math.min(bloque.start, bloque.end); i <= Math.max(bloque.start, bloque.end); i++) {
                 let emoji = String.fromCodePoint(i);
-                listaCompletaEmojis.push({ char: emoji, cat: bloque.cat });
+                listaCompletaEmojis.push({ char: emoji, cat: bloquesEmoji.find(b => b.start <= i && b.end >= i)?.cat || "Otros" });
             }
         });
         renderizarEmojis(listaCompletaEmojis);
@@ -965,6 +1101,89 @@
         modalMyProfile.style.display = "flex";
     });
 
+    // SISTEMA DE ESCUCHA DE NOTIFICACIONES GLOBALES EN TIEMPO REAL
+    function escucharNotificacionesGlobales() {
+        if (systemNotifListener) return;
+        
+        const notifRef = ref(db, 'system_notifications');
+        systemNotifListener = onValue(notifRef, (snapshot) => {
+            notificationsBox.innerHTML = "";
+            maxNotifTimestamp = 0;
+
+            if(snapshot.exists()) {
+                let htmlAcumulado = "";
+                snapshot.forEach(child => {
+                    const nData = child.val();
+                    if(nData.timestamp > maxNotifTimestamp) {
+                        maxNotifTimestamp = nData.timestamp;
+                    }
+                    
+                    const f = new Date(nData.timestamp);
+                    const horaStr = f.toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+                    
+                    let prefixIcon = nData.text.includes("Spam") ? "🚨" : (nData.text.includes("SANCIÓN") ? "⚖️" : "📢");
+                    
+                    htmlAcumulado += `
+                        <div class="notif-item">
+                            <div class="notif-header">
+                                <span>${prefixIcon} COMUNICADO OFICIAL</span>
+                                <span>${horaStr}</span>
+                            </div>
+                            <div class="notif-body">${nData.text}</div>
+                        </div>
+                    `;
+                });
+                notificationsBox.innerHTML = htmlAcumulado;
+                notificationsBox.scrollTop = notificationsBox.scrollHeight;
+            } else {
+                notificationsBox.innerHTML = `<div style="text-align:center; color:#777; font-size:13px; padding:20px;">No se han emitido actualizaciones del chat todavía.</div>`;
+            }
+            comprobarGloboNotificaciones();
+        });
+    }
+
+    function comprobarGloboNotificaciones() {
+        if (!currentUser || !cacheUsuarios[currentUser]) return;
+        const lastReadNotif = cacheUsuarios[currentUser].lastReadNotif || 0;
+        
+        if (maxNotifTimestamp > lastReadNotif) {
+            notifBadge.style.display = "inline-flex";
+        } else {
+            notifBadge.style.display = "none";
+        }
+    }
+
+    document.getElementById('open-modal-notifications').addEventListener('click', async () => {
+        toggleSidebar(false);
+        modalNotifications.style.display = "flex";
+
+        if (currentUser === "Saúl") {
+            saulNotifMenu.style.display = "block";
+        } else {
+            saulNotifMenu.style.display = "none";
+        }
+
+        if (currentUser) {
+            await update(ref(db, `users/${currentUser}`), { lastReadNotif: Date.now() });
+            notifBadge.style.display = "none";
+        }
+    });
+
+    btnSaulSendNotif.addEventListener('click', async () => {
+        const txt = saulNotifInput.value.trim();
+        if(!txt) return alert("Escribe el texto de la notificación.");
+        if(currentUser !== "Saúl") return alert("Acceso denegado.");
+
+        try {
+            await push(ref(db, 'system_notifications'), {
+                text: txt,
+                timestamp: serverTimestamp()
+            });
+            saulNotifInput.value = "";
+        } catch(e) { console.error(e); }
+    });
+
+    document.getElementById('close-modal-notifications').addEventListener('click', () => { modalNotifications.style.display = "none"; });
     document.getElementById('close-modal-create').addEventListener('click', () => { modalCreate.style.display = "none"; });
     document.getElementById('close-modal-profile').addEventListener('click', () => { modalProfile.style.display = "none"; });
     document.getElementById('close-modal-settings').addEventListener('click', () => { modalSettings.style.display = "none"; });
@@ -1051,6 +1270,8 @@
         messageInput.value = "";
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
+        systemNoticeBanner.style.display = "none";
+        if (noticeBannerListener) noticeBannerListener();
         messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
     }
 
@@ -1065,12 +1286,10 @@
         if(!nuevaPass) { alert("⚠️ Error: El campo de contraseña no puede quedar vacío."); return; }
         if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso de Seguridad! La contraseña debe tener exactamente 6 números."); return; }
         
-        const misDatos = cacheUsuarios[currentUser] || {};
-        await procesarCambioNombreUsuario(currentUser, currentUser, { 
+        await update(ref(db, `users/${currentUser}`), { 
             password: nuevaPass, 
             emoji: nuevoEmoji, 
-            loggedOnce: true,
-            lastRead: misDatos.lastRead || {}
+            loggedOnce: true
         });
         modalMyProfile.style.display = "none";
         alert("✔️ Tu perfil se ha actualizado con éxito.");
@@ -1089,7 +1308,11 @@
             password: nuevaPass, 
             emoji: nuevoEmoji, 
             loggedOnce: true,
-            lastRead: datosViejos.lastRead || {}
+            banCount: datosViejos.banCount || 0,
+            banUntil: datosViejos.banUntil || 0,
+            warned: datosViejos.warned || false,
+            lastRead: datosViejos.lastRead || {},
+            lastReadNotif: datosViejos.lastReadNotif || 0
         });
         modalRecoveryPanel.style.display = "none";
         alert(`✔️ Cuenta de ${nuevoNombre} restablecida.`);
@@ -1119,6 +1342,7 @@
             await verficarChatGrupalPermanente();
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
+            escucharNotificacionesGlobales();
             listenToGroups();
             toggleSidebar(false);
             
@@ -1135,6 +1359,7 @@
             await verficarChatGrupalPermanente();
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
+            escucharNotificacionesGlobales();
             listenToGroups();
             toggleSidebar(true);
         } else {
@@ -1143,122 +1368,42 @@
         }
     });
 
-    function listenToGroups() {
-        const groupsRef = ref(db, 'groups');
-        onValue(groupsRef, (snapshot) => {
-            groupsContainer.innerHTML = "";
-            cacheGrupos = {};
-
-            if (snapshot.exists()) {
-                const lastReadData = cacheUsuarios[currentUser]?.lastRead || {};
-
-                snapshot.forEach(child => {
-                    const groupId = child.key;
-                    const groupData = child.val();
-                    cacheGrupos[groupId] = groupData;
-
-                    if (groupData.members && groupData.members[currentUser]) {
-                        let div = document.createElement('div');
-                        div.className = `group-item ${groupId === activeGroupId ? 'active-group' : ''}`;
-                        
-                        let groupNameDisplay = groupData.name;
-                        let emojiIcon = groupData.icon || "💬";
-
-                        if (groupData.isPrivateChat) {
-                            const otherUser = Object.keys(groupData.members).find(m => m !== currentUser);
-                            if (otherUser) {
-                                const otherUserData = cacheUsuarios[otherUser] || {};
-                                groupNameDisplay = `${otherUser} (Privado)`;
-                                emojiIcon = otherUserData.emoji || "🔒";
-                            }
-                        }
-
-                        let unreadCount = 0;
-                        if (groupData.messages && groupId !== activeGroupId) {
-                            const lastReadTime = lastReadData[groupId] || 0;
-                            Object.values(groupData.messages).forEach(msg => {
-                                if (msg.timestamp > lastReadTime && msg.user !== currentUser) {
-                                    unreadCount++;
-                                }
-                            });
-                        }
-
-                        let badgeHtml = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
-
-                        div.innerHTML = `
-                            <span class="group-name">${emojiIcon} ${groupNameDisplay}</span>
-                            ${badgeHtml}
-                        `;
-                        div.addEventListener('click', () => {
-                            toggleSidebar(false);
-                            openChat(groupId, `${emojiIcon} ${groupNameDisplay}`);
-                        });
-                        groupsContainer.appendChild(div);
-                    }
-                });
-            }
-        });
-    }
-
-    document.getElementById('btn-create-group').addEventListener('click', async () => {
-        const groupName = document.getElementById('new-group-name').value.trim();
-        if (!groupName) return alert("Escribe el nombre del grupo");
-
-        let members = {};
-        let hosts = {};
-        members[currentUser] = true;
-
-        document.querySelectorAll('.member-row').forEach(row => {
-            const chkMember = row.querySelector('.chk-member');
-            const chkHost = row.querySelector('.chk-host');
-            if (chkMember && chkMember.value === currentUser) {
-                if (chkHost && chkHost.checked) hosts[currentUser] = true;
-            } else if (chkMember && chkMember.checked && !chkMember.disabled) {
-                members[chkMember.value] = true;
-                if (chkHost && chkHost.checked && !chkHost.disabled) hosts[chkHost.value] = true;
-            }
-        });
-
-        if (Object.keys(hosts).length === 0) {
-            alert("⚠️ Debes marcar al menos un 'Admin' para el grupo.");
-            return;
-        }
-
-        try {
-            const newGroupRef = push(ref(db, 'groups'));
-            await set(newGroupRef, { name: groupName, icon: "💬", members: members, hosts: hosts });
-            document.getElementById('new-group-name').value = "";
-            modalCreate.style.display = "none";
-        } catch(e) { console.error(e); }
-    });
-
-    async function cambiarIconoGrupoFirebase(emojiElegido) {
-        if(!activeGroupId || activeGroupId === 'chat_grupal_fijo') return;
-        if(cacheGrupos[activeGroupId].isPrivateChat) return;
-        try {
-            await update(ref(db, `groups/${activeGroupId}`), { icon: emojiElegido });
-            modalSettings.style.display = "none";
-            txtChatTitle.textContent = `${emojiElegido} ${cacheGrupos[activeGroupId].name}`;
-        } catch(e) { console.error(e); }
-    }
-
     function openChat(groupId, groupFullName) {
         activeGroupId = groupId;
         txtChatTitle.textContent = groupFullName;
-        
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
         btnOpenSettings.style.display = "block";
-        
-        btnAttachImage.disabled = false;
-        btnAttachVideo.disabled = false;
-        btnRecordAudio.disabled = false;
+
+        const misDatos = cacheUsuarios[currentUser] || {};
+        if (misDatos.banUntil && Date.now() < misDatos.banUntil) {
+            iniciarMuteoGlobal();
+        } else {
+            levantarMuteoGlobal();
+        }
 
         if (chatListener) chatListener();
+        if (noticeBannerListener) noticeBannerListener();
 
         if (currentUser) {
             set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
         }
+
+        const noticeRef = ref(db, `groups/${groupId}/notice`);
+        noticeBannerListener = onValue(noticeRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                if (Date.now() - data.time < 15000) {
+                    systemNoticeBanner.textContent = data.text;
+                    systemNoticeBanner.style.display = "block";
+                    setTimeout(() => {
+                        systemNoticeBanner.style.display = "none";
+                    }, 15000);
+                } else {
+                    systemNoticeBanner.style.display = "none";
+                }
+            } else {
+                systemNoticeBanner.style.display = "none";
+            }
+        });
 
         const messagesRef = query(ref(db, `groups/${groupId}/messages`), limitToLast(100));
         let lastRenderedDate = "";
@@ -1313,7 +1458,8 @@
                         openUserProfile(e.currentTarget.getAttribute('data-username'));
                     });
 
-                    if (groupId !== 'chat_grupal_fijo' && (data.user === currentUser || soyAnfitrion)) {
+                    // MODIFICACIÓN DE BORRADO: Permitido para mis mensajes y para el admin en cualquier sala
+                    if (data.user === currentUser || soyAnfitrion || currentUser === "Saúl") {
                         let deleteIcon = document.createElement('span');
                         deleteIcon.className = 'delete-icon';
                         deleteIcon.innerHTML = '🗑️';
@@ -1340,6 +1486,79 @@
     async function sendMessage() {
         const text = messageInput.value.trim();
         if (!text || !activeGroupId) return;
+
+        // --- SISTEMA ANTISPAM DE CONTEO Y BANEO PÚBLICO ---
+        const ahora = Date.now();
+        msgHistory.push(ahora);
+
+        if (msgHistory.length > 3) {
+            msgHistory.shift();
+        }
+
+        if (msgHistory.length === 3) {
+            const tiempoTranscurrido = msgHistory[2] - msgHistory[0];
+
+            if (tiempoTranscurrido <= 5000) {
+                const userModRef = ref(db, `users/${currentUser}`);
+                const misDatos = cacheUsuarios[currentUser] || {};
+                
+                if (!misDatos.warned) {
+                    messageInput.value = "";
+                    await update(userModRef, { warned: true });
+                    
+                    // Aviso público en el banner rojo de la sala
+                    await set(ref(db, `groups/${activeGroupId}/notice`), {
+                        text: `⚠️ AVISO: ¡${currentUser} está haciendo Flooding/Spam muy rápido!`,
+                        time: Date.now()
+                    });
+                    
+                    messageInput.disabled = true;
+                    sendBtn.disabled = true;
+                    messageInput.placeholder = "Advertencia por Spam activa...";
+                    
+                    setTimeout(() => {
+                        if (activeGroupId && (!misDatos.banUntil || Date.now() > misDatos.banUntil)) {
+                            messageInput.disabled = false;
+                            sendBtn.disabled = false;
+                            messageInput.placeholder = "Escribe un mensaje...";
+                            messageInput.focus();
+                        }
+                    }, 4000);
+                    
+                    msgHistory = [];
+                    return;
+                } else {
+                    messageInput.value = "";
+                    
+                    let currentBanCount = misDatos.banCount || 0;
+                    currentBanCount++;
+                    let minutosBaneo = Math.min(currentBanCount * 5, 50);
+                    let banExpirationTimestamp = Date.now() + (minutosBaneo * 60000);
+                    
+                    // Baneo público en la sala actual
+                    await set(ref(db, `groups/${activeGroupId}/notice`), {
+                        text: `❌ SILENCIADO: ¡${currentUser} ha sido bloqueado por Spam durante ${minutosBaneo} minutos!`,
+                        time: Date.now()
+                    });
+
+                    // Notificación oficial global
+                    await push(ref(db, 'system_notifications'), {
+                        text: `🚨 Sistema Anti-Spam: El usuario ${currentUser} ha sido silenciado en toda la app durante ${minutosBaneo} minutos por hacer flood continuo.`,
+                        timestamp: serverTimestamp()
+                    });
+
+                    await update(userModRef, {
+                        banCount: currentBanCount,
+                        banUntil: banExpirationTimestamp,
+                        warned: false
+                    });
+
+                    msgHistory = [];
+                    return;
+                }
+            }
+        }
+
         try {
             await push(ref(db, `groups/${activeGroupId}/messages`), {
                 user: currentUser, text: text, type: "text", timestamp: serverTimestamp()
@@ -1348,7 +1567,7 @@
         } catch(e) { console.error(e); }
     }
 
-    // MANEJO DE IMÁGENES
+    // IMÁGENES
     btnAttachImage.addEventListener('click', () => { hiddenImageInput.click(); });
     hiddenImageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -1376,7 +1595,7 @@
         };
     });
 
-    // SUBIDA DE VÍDEOS
+    // VÍDEOS
     btnAttachVideo.addEventListener('click', () => { hiddenVideoInput.click(); });
     hiddenVideoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -1397,7 +1616,7 @@
         };
     });
 
-    // GRABACIÓN DE AUDIO DE VOZ
+    // AUDIO DE VOZ
     btnRecordAudio.addEventListener('click', async () => {
         if (!isRecording) {
             try {
@@ -1433,6 +1652,12 @@
     // SALIDA DE LA APP
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
+        if (systemNotifListener) systemNotifListener();
+        if (noticeBannerListener) noticeBannerListener();
+        
+        clearInterval(banInterval);
+        msgHistory = [];
+
         currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
         desactivarInputsDeChat();
         toggleSidebar(false);
