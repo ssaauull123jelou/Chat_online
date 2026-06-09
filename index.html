@@ -323,6 +323,17 @@
         }
         .notif-header { font-size: 11px; font-weight: bold; color: #a56b00; margin-bottom: 3px; display: flex; justify-content: space-between; }
         .notif-body { font-size: 14px; color: #333; word-wrap: break-word; font-weight: 500; }
+
+        /* PESTAÑAS MODAL NOTIFICACIONES */
+        .tab-header { display: flex; border-bottom: 2px solid #ddd; background: #fff; }
+        .tab-btn { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #666; transition: 0.3s; font-size: 14px; }
+        .tab-btn.active { color: #e67e22; border-bottom: 3px solid #e67e22; background: #fef5ec; }
+        .tab-content { display: none; flex: 1; overflow-y: auto; padding: 10px; }
+        .tab-content.active { display: flex; flex-direction: column; }
+        
+        .ban-item { background: #ffebee; border-left: 5px solid #f44336; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .ban-header { display: flex; justify-content: space-between; font-weight: bold; color: #c62828; margin-bottom: 4px; font-size: 12px; }
+
     </style>
 </head>
 <body>
@@ -352,7 +363,7 @@
             <div class="groups-list" id="groups-container"></div>
             
             <div class="sidebar-footer">
-                <button class="btn-primary" id="open-modal-notifications" style="position: relative; background-color: #ff9800;" title="Notificaciones Globales">
+                <button class="btn-primary" id="open-modal-notifications" style="position: relative; background-color: #ff9800;" title="Centro de Alertas">
                     📢<span id="notif-badge" class="unread-badge" style="display: none; position: absolute; top: -4px; right: -4px; background-color: #f44336; min-width: 16px; height: 16px; font-size: 10px; border: 1px solid white;">!</span>
                 </button>
                 <button class="btn-primary" id="open-modal-my-profile" style="background-color: var(--secondary-color);" title="Ajustes de mi Perfil">👤</button>
@@ -364,19 +375,49 @@
 
         <div class="modal-screen" id="modal-notifications">
             <div class="modal-header" style="background-color: #e67e22;">
-                <h3 style="margin:0;">📢 Notificaciones del Sistema</h3>
+                <h3 style="margin:0;">📢 Centro de Alertas</h3>
                 <button class="sidebar-close-btn" id="close-modal-notifications">✕</button>
             </div>
-            <div class="modal-body" style="background: #fdfefe; display: flex; flex-direction: column;">
-                <div id="notifications-box" style="flex:1; overflow-y:auto; padding:5px;">
-                    <div style="text-align:center; color:#777; font-size:13px; padding:20px;">Cargando notificaciones oficiales...</div>
-                </div>
+            
+            <div class="tab-header">
+                <div class="tab-btn active" id="tab-btn-anuncios">Anuncios Oficiales</div>
+                <div class="tab-btn" id="tab-btn-baneos" style="color: #c62828;">🔨 Baneos</div>
+            </div>
+
+            <div class="modal-body" style="background: #fdfefe; display: flex; flex-direction: column; padding: 0;">
                 
-                <div id="saul-notif-menu" style="display:none; padding:12px; border-top:2px solid #e67e22; background:#fef5ec; border-radius:8px; margin-top:10px;">
-                    <h5 style="margin:0 0 8px 0; color:#d35400; font-size:13px; text-transform:uppercase;">Panel Exclusivo de Saúl (Alertas y Actualizaciones)</h5>
-                    <input type="text" id="saul-notif-input" placeholder="Escribe un anuncio oficial (ej: Chat Actualizado)..." style="margin:0 0 8px 0; font-size:14px; padding:10px;">
-                    <button class="btn-primary" id="btn-saul-send-notif" style="background:#e67e22; padding:10px; font-size:14px;">Publicar Notificación Oficial</button>
+                <div class="tab-content active" id="tab-anuncios">
+                    <div id="notifications-box" style="flex:1; overflow-y:auto; padding:5px;">
+                        <div style="text-align:center; color:#777; font-size:13px; padding:20px;">Cargando notificaciones oficiales...</div>
+                    </div>
+                    
+                    <div id="saul-notif-menu" style="display:none; padding:12px; border-top:2px solid #e67e22; background:#fef5ec; border-radius:0 0 8px 8px; margin-top:auto;">
+                        <h5 style="margin:0 0 8px 0; color:#d35400; font-size:13px; text-transform:uppercase;">Panel Exclusivo de Saúl (Alertas)</h5>
+                        <input type="text" id="saul-notif-input" placeholder="Escribe un anuncio oficial..." style="margin:0 0 8px 0; font-size:14px; padding:10px;">
+                        <button class="btn-primary" id="btn-saul-send-notif" style="background:#e67e22; padding:10px; font-size:14px;">Publicar Notificación Oficial</button>
+                    </div>
                 </div>
+
+                <div class="tab-content" id="tab-baneos">
+                    <div id="ban-logs-box" style="flex:1; overflow-y:auto; padding:5px;">
+                        <div style="text-align:center; color:#777; font-size:13px; padding:20px;">Cargando historial de baneos...</div>
+                    </div>
+                    
+                    <div id="saul-ban-menu" style="display:none; padding:12px; border-top:2px solid #f44336; background:#ffebee; border-radius:0 0 8px 8px; margin-top:auto;">
+                        <h5 style="margin:0 0 8px 0; color:#c62828; font-size:13px; text-transform:uppercase;">Panel de Sanciones (Saúl)</h5>
+                        
+                        <select id="saul-ban-user" style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc; font-size:14px;">
+                            <option value="">Selecciona usuario a banear...</option>
+                        </select>
+                        
+                        <input type="number" id="saul-ban-hours" placeholder="Duración en horas..." min="1" step="any" style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box;">
+                        
+                        <input type="text" id="saul-ban-reason" placeholder="Motivo del baneo (ej: Comportamiento inadecuado)..." style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box;">
+                        
+                        <button class="btn-primary" id="btn-saul-send-ban" style="background:#f44336; padding:10px; font-size:14px;">Aplicar Sanción Global</button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -567,6 +608,7 @@
     let activeGroupId = "";
     let chatListener = null;
     let systemNotifListener = null;
+    let banLogListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
@@ -612,6 +654,20 @@
     const btnSaulSendNotif = document.getElementById('btn-saul-send-notif');
     const notifBadge = document.getElementById('notif-badge');
 
+    // DOM NUEVAS PESTAÑAS (ANUNCIOS Y BANEOS)
+    const tabBtnAnuncios = document.getElementById('tab-btn-anuncios');
+    const tabBtnBaneos = document.getElementById('tab-btn-baneos');
+    const tabAnuncios = document.getElementById('tab-anuncios');
+    const tabBaneos = document.getElementById('tab-baneos');
+    const banLogsBox = document.getElementById('ban-logs-box');
+    
+    // DOM FORMULARIO BANEOS SAUL
+    const saulBanMenu = document.getElementById('saul-ban-menu');
+    const saulBanUser = document.getElementById('saul-ban-user');
+    const saulBanHours = document.getElementById('saul-ban-hours');
+    const saulBanReason = document.getElementById('saul-ban-reason');
+    const btnSaulSendBan = document.getElementById('btn-saul-send-ban');
+
     // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
     const btnAttachVideo = document.getElementById('btn-attach-video');
@@ -622,6 +678,16 @@
     function initUI() {
         generarBancoEmojis();
         sincronizarYEscucharUsuarios();
+        
+        // Pestañas lógica
+        tabBtnAnuncios.addEventListener('click', () => {
+            tabBtnAnuncios.classList.add('active'); tabBtnBaneos.classList.remove('active');
+            tabAnuncios.classList.add('active'); tabBaneos.classList.remove('active');
+        });
+        tabBtnBaneos.addEventListener('click', () => {
+            tabBtnBaneos.classList.add('active'); tabBtnAnuncios.classList.remove('active');
+            tabBaneos.classList.add('active'); tabAnuncios.classList.remove('active');
+        });
     }
 
     function sincronizarYEscucharUsuarios() {
@@ -645,7 +711,6 @@
             } else {
                 cacheUsuarios = snapshot.val();
                 
-                // CONTROL DE BANEOS (SILENCIOS GLOBALES PROGRESIVOS)
                 if (currentUser && cacheUsuarios[currentUser]) {
                     const datosPropios = cacheUsuarios[currentUser];
                     if (datosPropios.banUntil && Date.now() < datosPropios.banUntil) {
@@ -657,9 +722,7 @@
                 }
 
                 renderLoginUsersGrid();
-                if (currentUser) {
-                    listenToGroups();
-                }
+                if (currentUser) listenToGroups();
             }
         });
     }
@@ -679,9 +742,14 @@
             if (timeLeft <= 0) {
                 levantarMuteoGlobal();
             } else {
-                const mins = Math.floor(timeLeft / 60000);
+                const hrs = Math.floor(timeLeft / 3600000);
+                const mins = Math.floor((timeLeft % 3600000) / 60000);
                 const secs = Math.floor((timeLeft % 60000) / 1000);
-                messageInput.placeholder = `Tiempo restante: ${mins}m ${secs}s`;
+                if (hrs > 0) {
+                    messageInput.placeholder = `Baneado por Saúl. Quedan: ${hrs}h ${mins}m`;
+                } else {
+                    messageInput.placeholder = `Tiempo restante de sanción: ${mins}m ${secs}s`;
+                }
             }
         }, 1000);
     }
@@ -846,7 +914,6 @@
                     
                     let renderBtnHost = (activeGroupId === 'chat_grupal_fijo' || infoGrupo.isPrivateChat) ? '' : `<button class="btn-small-host" data-user="${nombre}" style="background:${btnHostBg}; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px;">${btnHostText}</button>`;
                     
-                    // BOTÓN DE BANEO MANUAL MUDO (Afecta tanto a grupos normales como al global)
                     let currentBanCount = userData.banCount || 0;
                     let proximoTiempoBan = Math.min((currentBanCount + 1) * 5, 50);
                     let renderBtnKick = infoGrupo.isPrivateChat ? '' : `<button class="btn-small-kick" data-user="${nombre}" title="Silenciar: ${proximoTiempoBan} min">⚠️ Banear (${proximoTiempoBan}m)</button>`;
@@ -1086,7 +1153,7 @@
         modalMyProfile.style.display = "flex";
     });
 
-    // SISTEMA DE ESCUCHA DE NOTIFICACIONES EN TIEMPO REAL
+    // SISTEMA ESCUCHA DE NOTIFICACIONES GLOBALES
     function escucharNotificacionesGlobales() {
         if (systemNotifListener) return;
         
@@ -1099,9 +1166,7 @@
                 let htmlAcumulado = "";
                 snapshot.forEach(child => {
                     const nData = child.val();
-                    if(nData.timestamp > maxNotifTimestamp) {
-                        maxNotifTimestamp = nData.timestamp;
-                    }
+                    if(nData.timestamp > maxNotifTimestamp) maxNotifTimestamp = nData.timestamp;
                     
                     const f = new Date(nData.timestamp);
                     const horaStr = f.toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
@@ -1109,7 +1174,7 @@
                     htmlAcumulado += `
                         <div class="notif-item">
                             <div class="notif-header">
-                                <span>📢 COMUNICADO DE SAÚL</span>
+                                <span>📢 COMUNICADO OFICIAL</span>
                                 <span>${horaStr}</span>
                             </div>
                             <div class="notif-body">${nData.text}</div>
@@ -1125,10 +1190,40 @@
         });
     }
 
+    // SISTEMA DE ESCUCHA DE BANEOS (NUEVO)
+    function escucharHistorialBaneos() {
+        if (banLogListener) return;
+        const bansRef = ref(db, 'ban_logs');
+        banLogListener = onValue(bansRef, (snapshot) => {
+            banLogsBox.innerHTML = "";
+            if(snapshot.exists()) {
+                let html = "";
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    const f = new Date(data.timestamp);
+                    const horaStr = f.toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+                    html += `
+                        <div class="ban-item">
+                            <div class="ban-header">
+                                <span>🔨 ${data.user}</span>
+                                <span>${horaStr}</span>
+                            </div>
+                            <div style="margin-bottom: 3px;"><b>Motivo:</b> ${data.reason}</div>
+                            <div><b>Duración:</b> ${data.hours} horas</div>
+                        </div>
+                    `;
+                });
+                banLogsBox.innerHTML = html;
+                banLogsBox.scrollTop = banLogsBox.scrollHeight;
+            } else {
+                banLogsBox.innerHTML = `<div style="text-align:center; color:#777; font-size:13px; padding:20px;">El historial de sanciones está vacío.</div>`;
+            }
+        });
+    }
+
     function comprobarGloboNotificaciones() {
         if (!currentUser || !cacheUsuarios[currentUser]) return;
         const lastReadNotif = cacheUsuarios[currentUser].lastReadNotif || 0;
-        
         if (maxNotifTimestamp > lastReadNotif) {
             notifBadge.style.display = "inline-flex";
         } else {
@@ -1136,14 +1231,25 @@
         }
     }
 
+    // ABRIR MODAL DE NOTIFICACIONES (SAÚL)
     document.getElementById('open-modal-notifications').addEventListener('click', async () => {
         toggleSidebar(false);
         modalNotifications.style.display = "flex";
 
         if (currentUser === "Saúl") {
             saulNotifMenu.style.display = "block";
+            saulBanMenu.style.display = "block";
+            
+            // Llenar select de baneos
+            saulBanUser.innerHTML = '<option value="">Selecciona usuario a banear...</option>';
+            Object.keys(cacheUsuarios).forEach(nombre => {
+                if(nombre !== "Saúl") {
+                    saulBanUser.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+                }
+            });
         } else {
             saulNotifMenu.style.display = "none";
+            saulBanMenu.style.display = "none";
         }
 
         if (currentUser) {
@@ -1163,6 +1269,45 @@
                 timestamp: serverTimestamp()
             });
             saulNotifInput.value = "";
+        } catch(e) { console.error(e); }
+    });
+
+    // BOTÓN PARA APLICAR BANEO MANUAL COMO SAÚL
+    btnSaulSendBan.addEventListener('click', async () => {
+        if (currentUser !== "Saúl") return;
+        const targetUser = saulBanUser.value;
+        const horas = parseFloat(saulBanHours.value);
+        const motivo = saulBanReason.value.trim();
+
+        if (!targetUser || isNaN(horas) || horas <= 0 || !motivo) {
+            return alert("❌ Debes seleccionar un usuario, escribir una cantidad válida de horas y proporcionar un motivo.");
+        }
+
+        try {
+            const msBaneo = horas * 3600 * 1000;
+            const targetUserData = cacheUsuarios[targetUser] || {};
+            const totalBaneosPrevios = targetUserData.banCount || 0;
+            
+            // Actualizar status del usuario en base de datos
+            await update(ref(db, `users/${targetUser}`), {
+                banCount: totalBaneosPrevios + 1,
+                banUntil: Date.now() + msBaneo
+            });
+
+            // Guardar en el log de sanciones
+            await push(ref(db, 'ban_logs'), {
+                user: targetUser,
+                hours: horas,
+                reason: motivo,
+                timestamp: serverTimestamp(),
+                bannedBy: currentUser
+            });
+
+            alert(`✅ ${targetUser} ha sido baneado/a con éxito por ${horas} hora(s).`);
+            saulBanHours.value = "";
+            saulBanReason.value = "";
+            saulBanUser.value = "";
+
         } catch(e) { console.error(e); }
     });
 
@@ -1330,6 +1475,7 @@
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
             escucharNotificacionesGlobales();
+            escucharHistorialBaneos();
             listenToGroups();
             toggleSidebar(false);
             
@@ -1347,6 +1493,7 @@
             scrLogin.style.display = "none";
             scrChat.style.display = "flex";
             escucharNotificacionesGlobales();
+            escucharHistorialBaneos();
             listenToGroups();
             toggleSidebar(true);
         } else {
@@ -1525,7 +1672,6 @@
                         openUserProfile(e.currentTarget.getAttribute('data-username'));
                     });
 
-                    // MODIFICACIÓN: Borrado de mensajes habilitado en todos los grupos, incluyendo el Chat Grupal.
                     if (data.user === currentUser || soyAnfitrion) {
                         let deleteIcon = document.createElement('span');
                         deleteIcon.className = 'delete-icon';
@@ -1711,6 +1857,7 @@
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
         if (systemNotifListener) systemNotifListener();
+        if (banLogListener) banLogListener();
         
         clearInterval(banInterval);
         msgHistory = [];
