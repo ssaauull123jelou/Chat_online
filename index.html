@@ -425,14 +425,6 @@
                 <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Cambiar mi Emoji / Icono:</label>
                 <input type="text" id="my-profile-emoji" placeholder="Ej: 🦊" style="font-size: 22px; text-align: center; width: 80px; margin: 5px auto; display: block;">
 
-                <div class="admin-section-title">Notificaciones Externas</div>
-                <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0 10px 0; cursor: pointer; font-size: 14px; font-weight: 500; color: #333;">
-                    <input type="checkbox" id="my-profile-email-notif" style="width: auto; margin: 0; transform: scale(1.2);">
-                    Recibir notificaciones por correo de mensajes sin leer
-                </label>
-                
-                <input type="email" id="my-profile-email-input" placeholder="Introduce tu dirección de correo (ej: correo@correo.correo)" style="display: none;">
-
                 <button class="btn-primary" id="btn-save-my-profile" style="margin-top: 20px;">Guardar Cambios</button>
             </div>
         </div>
@@ -574,21 +566,6 @@
     function initUI() {
         generarBancoEmojis();
         sincronizarYEscucharUsuarios();
-        configurarEventosPerfilDinamico();
-    }
-
-    function configurarEventosPerfilDinamico() {
-        const checkboxNotif = document.getElementById('my-profile-email-notif');
-        const inputEmail = document.getElementById('my-profile-email-input');
-        
-        checkboxNotif.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                inputEmail.style.display = "block";
-                inputEmail.focus();
-            } else {
-                inputEmail.style.display = "none";
-            }
-        });
     }
 
     function sincronizarYEscucharUsuarios() {
@@ -601,8 +578,6 @@
                         password: usuariosPermitidosPredefinidos[nombre],
                         emoji: "😀", 
                         loggedOnce: false,
-                        emailNotifications: false,
-                        email: "",
                         lastRead: {}
                     };
                 });
@@ -846,7 +821,7 @@
         let cont = 0;
         Object.keys(cacheGrupos).forEach(gId => {
             const grupo = cacheGrupos[gId];
-            if (grupo.members && grupo.members[currentUser] && group.members[targetUser]) {
+            if (grupo.members && grupo.members[currentUser] && grupo.members[targetUser]) {
                 cont++;
                 let icon = grupo.icon || "💬";
                 let item = document.createElement('div');
@@ -902,7 +877,7 @@
         bloquesEmoji.forEach(bloque => {
             for (let i = Math.min(bloque.start, bloque.end); i <= Math.max(bloque.start, bloque.end); i++) {
                 let emoji = String.fromCodePoint(i);
-                listaCompletaEmojis.push({ char: emoji, cat: bloquesEmoji.cat });
+                listaCompletaEmojis.push({ char: emoji, cat: bloque.cat });
             }
         });
         renderizarEmojis(listaCompletaEmojis);
@@ -986,13 +961,6 @@
         document.getElementById('my-profile-name').value = currentUser;
         document.getElementById('my-profile-pass').value = misDatos.password || "";
         document.getElementById('my-profile-emoji').value = misDatos.emoji || "😀";
-        
-        const tieneNotifEmail = misDatos.emailNotifications === true;
-        document.getElementById('my-profile-email-notif').checked = tieneNotifEmail;
-        
-        const inputEmail = document.getElementById('my-profile-email-input');
-        inputEmail.value = misDatos.email || "";
-        inputEmail.style.display = tieneNotifEmail ? "block" : "none";
 
         modalMyProfile.style.display = "flex";
     });
@@ -1093,25 +1061,15 @@
     document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
         const nuevaPass = document.getElementById('my-profile-pass').value.trim();
         const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "😀";
-        const emailNotif = document.getElementById('my-profile-email-notif').checked;
-        const nuevoCorreo = document.getElementById('my-profile-email-input').value.trim();
         
         if(!nuevaPass) { alert("⚠️ Error: El campo de contraseña no puede quedar vacío."); return; }
         if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso de Seguridad! La contraseña debe tener exactamente 6 números."); return; }
-        
-        if (emailNotif && !nuevoCorreo) {
-            alert("⚠️ Error: Has activado las notificaciones por correo electrónico, debes escribir una dirección de correo válida.");
-            document.getElementById('my-profile-email-input').focus();
-            return;
-        }
         
         const misDatos = cacheUsuarios[currentUser] || {};
         await procesarCambioNombreUsuario(currentUser, currentUser, { 
             password: nuevaPass, 
             emoji: nuevoEmoji, 
             loggedOnce: true,
-            emailNotifications: emailNotif,
-            email: emailNotif ? nuevoCorreo : (misDatos.email || ""),
             lastRead: misDatos.lastRead || {}
         });
         modalMyProfile.style.display = "none";
@@ -1131,8 +1089,6 @@
             password: nuevaPass, 
             emoji: nuevoEmoji, 
             loggedOnce: true,
-            emailNotifications: datosViejos.emailNotifications || false,
-            email: datosViejos.email || "",
             lastRead: datosViejos.lastRead || {}
         });
         modalRecoveryPanel.style.display = "none";
