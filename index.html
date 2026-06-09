@@ -149,10 +149,6 @@
         .header h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .header-actions { display: flex; gap: 12px; align-items: center; }
-        .btn-header-action {
-            background: none; border: none; color: white;
-            font-size: 20px; cursor: pointer; display: none; padding: 4px;
-        }
         .btn-settings {
             background: rgba(255,255,255,0.2); color: white; border: none;
             padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: none;
@@ -309,22 +305,6 @@
             cursor: pointer !important; font-weight: normal !important; width: auto !important; font-size: 22px !important;
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
-
-        /* INTERFAZ DE LLAMADAS */
-        #call-banner {
-            display: none; background: #25d366; color: white; padding: 10px 15px;
-            text-align: center; font-weight: bold; font-size: 13px; align-items: center;
-            justify-content: space-between; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        @keyframes avatarPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
-            70% { transform: scale(1.06); box-shadow: 0 0 0 20px rgba(37, 211, 102, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
-        }
-        .pulsing-avatar {
-            animation: avatarPulse 1.8s infinite ease-in-out;
-            background: rgba(255,255,255,0.1); border-radius: 50%; padding: 25px;
-        }
     </style>
 </head>
 <body>
@@ -345,14 +325,6 @@
     </div>
 
     <div class="chat-screen" id="scr-chat">
-        
-        <div id="call-banner">
-            <span id="call-banner-text">📞 Llamada de grupo en curso...</span>
-            <div style="display:flex; gap:8px;">
-                <button id="btn-join-call" style="background:white; color:#25d366; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Unirse</button>
-                <button id="btn-decline-call" style="background:rgba(0,0,0,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Ignorar</button>
-            </div>
-        </div>
 
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -487,27 +459,12 @@
             </div>
         </div>
 
-        <div class="modal-screen" id="modal-call-screen" style="background:#0b141a; color:white; z-index: 18;">
-            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; padding:20px;">
-                <div class="pulsing-avatar">
-                    <div id="call-screen-avatar" style="font-size: 70px; user-select: none;">📞</div>
-                </div>
-                <h2 id="call-screen-title" style="margin:10px 0 0 0; font-size:24px;">Llamada de Voz</h2>
-                <div id="call-screen-status" style="color:#25d366; font-size:14px; font-weight:500;">Conectando con el grupo...</div>
-                <div id="call-timer" style="font-size:20px; font-family:monospace; margin-top:10px; letter-spacing:1px; background:rgba(255,255,255,0.1); padding:4px 14px; border-radius:20px;">00:00</div>
-            </div>
-            <div style="padding:35px; display:flex; justify-content:center; background:#111b21; box-shadow: 0 -4px 10px rgba(0,0,0,0.3);">
-                <button id="btn-hangup" style="background:#f44336; color:white; border:none; border-radius:50%; width:65px; height:65px; font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🛑</button>
-            </div>
-        </div>
-
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
                 <h3 id="txt-chat-title">Selecciona un grupo</h3>
             </div>
             <div class="header-actions">
-                <button class="btn-header-action" id="btn-group-call" title="Iniciar Llamada en este grupo">📞</button>
                 <button class="btn-settings" id="btn-open-settings">⚙️ Ajustes</button>
                 <button class="btn-logout" id="btn-logout">Salir</button>
             </div>
@@ -576,7 +533,6 @@
     let currentUser = "";
     let activeGroupId = "";
     let chatListener = null;
-    let callStateListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
@@ -584,12 +540,10 @@
     let selectedUserLogin = ""; 
     let targetUserProfileName = "";
 
-    // ADJUNTOS AUDIO/LLAMADAS
+    // ADJUNTOS AUDIO
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
-    let callTimerInterval = null;
-    let activeCallGroupTracking = null;
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -607,7 +561,6 @@
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
-    const modalCallScreen = document.getElementById('modal-call-screen');
     const modalStartPrivate = document.getElementById('modal-start-private');
     const privateUsersList = document.getElementById('private-users-list');
 
@@ -615,11 +568,8 @@
     const btnAttachImage = document.getElementById('btn-attach-image');
     const btnAttachVideo = document.getElementById('btn-attach-video');
     const btnRecordAudio = document.getElementById('btn-record-audio');
-    const btnGroupCall = document.getElementById('btn-group-call');
     const hiddenImageInput = document.getElementById('hidden-image-input');
     const hiddenVideoInput = document.getElementById('hidden-video-input');
-    const callBanner = document.getElementById('call-banner');
-    const callBannerText = document.getElementById('call-banner-text');
 
     function initUI() {
         generarBancoEmojis();
@@ -752,7 +702,6 @@
         });
     }
 
-    // RENDERIZAR LISTA PARA EMPEZAR UN CHAT PRIVADO DIRECTO
     function renderPrivateUsersList() {
         privateUsersList.innerHTML = "";
         Object.keys(cacheUsuarios).forEach(nombre => {
@@ -897,7 +846,7 @@
         let cont = 0;
         Object.keys(cacheGrupos).forEach(gId => {
             const grupo = cacheGrupos[gId];
-            if (grupo.members && grupo.members[currentUser] && grupo.members[targetUser]) {
+            if (grupo.members && grupo.members[currentUser] && group.members[targetUser]) {
                 cont++;
                 let icon = grupo.icon || "💬";
                 let item = document.createElement('div');
@@ -913,7 +862,6 @@
         modalProfile.style.display = "flex";
     }
 
-    // LOGICA MAESTRA PARA BUSCAR O CREAR UN CHAT PRIVADO
     async function iniciarOAbrirChatPrivado(targetUser) {
         if (!targetUser || targetUser === currentUser) return;
 
@@ -998,7 +946,6 @@
         renderizarEmojis(filtrados);
     });
 
-    // REVISIÓN CLAVE: update() mantiene intacto el historial de mensajes
     async function verficarChatGrupalPermanente() {
         const globalGroupRef = ref(db, 'groups/chat_grupal_fijo');
         let membersGlobales = {};
@@ -1027,7 +974,6 @@
         modalCreate.style.display = "flex"; 
     });
 
-    // EVENTO BOTÓN NUEVO: CREAR CHAT PRIVADO
     document.getElementById('open-modal-private').addEventListener('click', () => {
         toggleSidebar(false);
         renderPrivateUsersList();
@@ -1134,7 +1080,6 @@
         btnAttachImage.disabled = true;
         btnAttachVideo.disabled = true;
         btnRecordAudio.disabled = true;
-        btnGroupCall.style.display = "none";
         messageInput.value = "";
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
@@ -1242,7 +1187,6 @@
         }
     });
 
-    // ESCUCHAR GRUPOS Y CHATS ACTIVOS
     function listenToGroups() {
         const groupsRef = ref(db, 'groups');
         onValue(groupsRef, (snapshot) => {
@@ -1353,10 +1297,8 @@
         btnAttachImage.disabled = false;
         btnAttachVideo.disabled = false;
         btnRecordAudio.disabled = false;
-        btnGroupCall.style.display = "block";
 
         if (chatListener) chatListener();
-        escucharLlamadasPorGrupo(groupId);
 
         if (currentUser) {
             set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
@@ -1532,80 +1474,10 @@
         }
     });
 
-    // LLAMADAS GRUPALES
-    function escucharLlamadasPorGrupo(groupId) {
-        if (callStateListener) callStateListener();
-        const callRef = ref(db, `groups/${groupId}/call`);
-        
-        callStateListener = onValue(callRef, (snapshot) => {
-            if (snapshot.exists() && snapshot.val().active === true) {
-                const callData = snapshot.val();
-                activeCallGroupTracking = groupId;
-                
-                if (modalCallScreen.style.display === "flex") {
-                    callBanner.style.display = "none";
-                } else {
-                    callBannerText.textContent = `📞 Llamada en curso (Iniciada por ${callData.startedBy})`;
-                    callBanner.style.display = "flex";
-                }
-            } else {
-                callBanner.style.display = "none";
-                if (activeCallGroupTracking === groupId) {
-                    modalCallScreen.style.display = "none";
-                    clearInterval(callTimerInterval);
-                }
-            }
-        });
-    }
-
-    btnGroupCall.addEventListener('click', async () => {
-        if (!activeGroupId) return;
-        const callRef = ref(db, `groups/${activeGroupId}/call`);
-        await set(callRef, {
-            active: true, startedBy: currentUser, timestamp: serverTimestamp()
-        });
-        desplegarPantallaDeLlamadaActiva();
-    });
-
-    document.getElementById('btn-join-call').addEventListener('click', () => {
-        desplegarPantallaDeLlamadaActiva();
-    });
-
-    document.getElementById('btn-decline-call').addEventListener('click', () => {
-        callBanner.style.display = "none";
-    });
-
-    document.getElementById('btn-hangup').addEventListener('click', async () => {
-        if (activeCallGroupTracking) {
-            await set(ref(db, `groups/${activeCallGroupTracking}/call`), { active: false });
-        }
-    });
-
-    function desplegarPantallaDeLlamadaActiva() {
-        callBanner.style.display = "none";
-        document.getElementById('call-screen-title').textContent = cacheGrupos[activeGroupId]?.name || "Llamada de grupo";
-        document.getElementById('call-screen-status').textContent = "Conexión de voz establecida de forma segura";
-        modalCallScreen.style.display = "flex";
-        
-        let totalSegundos = 0;
-        const timerText = document.getElementById('call-timer');
-        timerText.textContent = "00:00";
-        clearInterval(callTimerInterval);
-        
-        callTimerInterval = setInterval(() => {
-            totalSegundos++;
-            let min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
-            let seg = String(totalSegundos % 60).padStart(2, '0');
-            timerText.textContent = `${min}:${seg}`;
-        }, 1000);
-    }
-
     // SALIDA DE LA APP
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
-        if (callStateListener) callStateListener();
-        clearInterval(callTimerInterval);
-        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; activeCallGroupTracking = null;
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
         desactivarInputsDeChat();
         toggleSidebar(false);
         renderLoginUsersGrid(); 
