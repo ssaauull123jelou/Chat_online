@@ -149,10 +149,6 @@
         .header h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .header-actions { display: flex; gap: 12px; align-items: center; }
-        .btn-header-action {
-            background: none; border: none; color: white;
-            font-size: 20px; cursor: pointer; display: none; padding: 4px;
-        }
         .btn-settings {
             background: rgba(255,255,255,0.2); color: white; border: none;
             padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: none;
@@ -302,25 +298,11 @@
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
 
-        /* NUEVAS ANIMACIONES Y INTERFAZ DE LLAMADAS */
-        #call-banner {
-            display: none; background: #25d366; color: white; padding: 10px 15px;
-            text-align: center; font-weight: bold; font-size: 13px; align-items: center;
-            justify-content: space-between; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        @keyframes avatarPulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
-            70% { transform: scale(1.06); box-shadow: 0 0 0 20px rgba(37, 211, 102, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
-        }
-        .pulsing-avatar {
-            animation: avatarPulse 1.8s infinite ease-in-out;
-            background: rgba(255,255,255,0.1); border-radius: 50%; padding: 25px;
-        }
-
-        /* Animación suave para desplegar el correo */
-        #my-profile-email-input {
-            transition: all 0.3s ease;
+        /* BANNER DE ADVERTENCIA / BANEO DE SPAM */
+        #spam-banner {
+            display: none; background: #e53935; color: white; padding: 12px 15px;
+            text-align: center; font-weight: bold; font-size: 14px; align-items: center;
+            justify-content: center; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
     </style>
 </head>
@@ -343,12 +325,8 @@
 
     <div class="chat-screen" id="scr-chat">
         
-        <div id="call-banner">
-            <span id="call-banner-text">📞 Llamada de grupo en curso...</span>
-            <div style="display:flex; gap:8px;">
-                <button id="btn-join-call" style="background:white; color:#25d366; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Unirse</button>
-                <button id="btn-decline-call" style="background:rgba(0,0,0,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Ignorar</button>
-            </div>
+        <div id="spam-banner">
+            <span id="spam-banner-text">⚠️ Has sido bloqueado por hacer spam. Espera...</span>
         </div>
 
         <div class="sidebar" id="sidebar">
@@ -438,14 +416,6 @@
                 <label style="font-size: 12px; font-weight: bold; color: #555; margin-top: 10px; display: block;">Cambiar mi Emoji / Icono:</label>
                 <input type="text" id="my-profile-emoji" placeholder="Ej: 🦊" style="font-size: 22px; text-align: center; width: 80px; margin: 5px auto; display: block;">
 
-                <div class="admin-section-title">Notificaciones Externas</div>
-                <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0 10px 0; cursor: pointer; font-size: 14px; font-weight: 500; color: #333;">
-                    <input type="checkbox" id="my-profile-email-notif" style="width: auto; margin: 0; transform: scale(1.2);">
-                    Recibir notificaciones por correo de mensajes sin leer
-                </label>
-                
-                <input type="email" id="my-profile-email-input" placeholder="Introduce tu dirección de correo (ej: correo@correo.correo)" style="display: none;">
-
                 <button class="btn-primary" id="btn-save-my-profile" style="margin-top: 20px;">Guardar Cambios</button>
             </div>
         </div>
@@ -472,27 +442,12 @@
             </div>
         </div>
 
-        <div class="modal-screen" id="modal-call-screen" style="background:#0b141a; color:white; z-index: 18;">
-            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; padding:20px;">
-                <div class="pulsing-avatar">
-                    <div id="call-screen-avatar" style="font-size: 70px; user-select: none;">📞</div>
-                </div>
-                <h2 id="call-screen-title" style="margin:10px 0 0 0; font-size:24px;">Llamada de Voz</h2>
-                <div id="call-screen-status" style="color:#25d366; font-size:14px; font-weight:500;">Conectando con el grupo...</div>
-                <div id="call-timer" style="font-size:20px; font-family:monospace; margin-top:10px; letter-spacing:1px; background:rgba(255,255,255,0.1); padding:4px 14px; border-radius:20px;">00:00</div>
-            </div>
-            <div style="padding:35px; display:flex; justify-content:center; background:#111b21; box-shadow: 0 -4px 10px rgba(0,0,0,0.3);">
-                <button id="btn-hangup" style="background:#f44336; color:white; border:none; border-radius:50%; width:65px; height:65px; font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🛑</button>
-            </div>
-        </div>
-
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
                 <h3 id="txt-chat-title">Selecciona un grupo</h3>
             </div>
             <div class="header-actions">
-                <button class="btn-header-action" id="btn-group-call" title="Iniciar Llamada en este grupo">📞</button>
                 <button class="btn-settings" id="btn-open-settings">⚙️ Ajustes</button>
                 <button class="btn-logout" id="btn-logout">Salir</button>
             </div>
@@ -561,7 +516,6 @@
     let currentUser = "";
     let activeGroupId = "";
     let chatListener = null;
-    let callStateListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
@@ -569,12 +523,14 @@
     let selectedUserLogin = ""; 
     let targetUserProfileName = "";
 
-    // ADJUNTOS AUDIO/LLAMADAS
+    // ADJUNTOS AUDIO
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
-    let callTimerInterval = null;
-    let activeCallGroupTracking = null;
+
+    // LÓGICA DE CONTROL DE SPAM Y BANEOS PROGRESIVOS
+    let timestampsMensajesRecientes = [];
+    let intervaloBaneoSpam = null;
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -592,37 +548,19 @@
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
-    const modalCallScreen = document.getElementById('modal-call-screen');
 
     // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
     const btnAttachVideo = document.getElementById('btn-attach-video');
     const btnRecordAudio = document.getElementById('btn-record-audio');
-    const btnGroupCall = document.getElementById('btn-group-call');
     const hiddenImageInput = document.getElementById('hidden-image-input');
     const hiddenVideoInput = document.getElementById('hidden-video-input');
-    const callBanner = document.getElementById('call-banner');
-    const callBannerText = document.getElementById('call-banner-text');
+    const spamBanner = document.getElementById('spam-banner');
+    const spamBannerText = document.getElementById('spam-banner-text');
 
     function initUI() {
         generarBancoEmojis();
         sincronizarYEscucharUsuarios();
-        configurarEventosPerfilDinamico();
-    }
-
-    // Evento para mostrar/ocultar el input de correo en tiempo real
-    function configurarEventosPerfilDinamico() {
-        const checkboxNotif = document.getElementById('my-profile-email-notif');
-        const inputEmail = document.getElementById('my-profile-email-input');
-        
-        checkboxNotif.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                inputEmail.style.display = "block";
-                inputEmail.focus();
-            } else {
-                inputEmail.style.display = "none";
-            }
-        });
     }
 
     function sincronizarYEscucharUsuarios() {
@@ -635,8 +573,6 @@
                         password: usuariosPermitidosPredefinidos[nombre],
                         emoji: "😀", 
                         loggedOnce: false,
-                        emailNotifications: false,
-                        email: "",
                         lastRead: {}
                     };
                 });
@@ -989,14 +925,6 @@
         document.getElementById('my-profile-name').value = currentUser;
         document.getElementById('my-profile-pass').value = misDatos.password || "";
         document.getElementById('my-profile-emoji').value = misDatos.emoji || "😀";
-        
-        // Carga de la preferencia y del correo guardado
-        const tieneNotifEmail = misDatos.emailNotifications === true;
-        document.getElementById('my-profile-email-notif').checked = tieneNotifEmail;
-        
-        const inputEmail = document.getElementById('my-profile-email-input');
-        inputEmail.value = misDatos.email || "";
-        inputEmail.style.display = tieneNotifEmail ? "block" : "none";
 
         modalMyProfile.style.display = "flex";
     });
@@ -1083,11 +1011,19 @@
         btnAttachImage.disabled = true;
         btnAttachVideo.disabled = true;
         btnRecordAudio.disabled = true;
-        btnGroupCall.style.display = "none";
         messageInput.value = "";
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
         messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
+    }
+
+    function activarInputsDeChat() {
+        if (verificarBaneoSpamActivo()) return; 
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        btnAttachImage.disabled = false;
+        btnAttachVideo.disabled = false;
+        btnRecordAudio.disabled = false;
     }
 
     function esPasswordValido(pass) {
@@ -1097,26 +1033,15 @@
     document.getElementById('btn-save-my-profile').addEventListener('click', async () => {
         const nuevaPass = document.getElementById('my-profile-pass').value.trim();
         const nuevoEmoji = document.getElementById('my-profile-emoji').value.trim() || "😀";
-        const emailNotif = document.getElementById('my-profile-email-notif').checked;
-        const nuevoCorreo = document.getElementById('my-profile-email-input').value.trim();
         
         if(!nuevaPass) { alert("⚠️ Error: El campo de contraseña no puede quedar vacío."); return; }
         if(!esPasswordValido(nuevaPass)) { alert("❌ ¡Aviso de Seguridad! La contraseña debe tener exactamente 6 números."); return; }
-        
-        // Validación obligatoria si la casilla está activa
-        if (emailNotif && !nuevoCorreo) {
-            alert("⚠️ Error: Has activado las notificaciones por correo electrónico, debes escribir una dirección de correo válida.");
-            document.getElementById('my-profile-email-input').focus();
-            return;
-        }
         
         const misDatos = cacheUsuarios[currentUser] || {};
         await procesarCambioNombreUsuario(currentUser, currentUser, { 
             password: nuevaPass, 
             emoji: nuevoEmoji, 
             loggedOnce: true,
-            emailNotifications: emailNotif,
-            email: emailNotif ? nuevoCorreo : (misDatos.email || ""), // Guarda el correo si está activo
             lastRead: misDatos.lastRead || {}
         });
         modalMyProfile.style.display = "none";
@@ -1136,13 +1061,84 @@
             password: nuevaPass, 
             emoji: nuevoEmoji, 
             loggedOnce: true,
-            emailNotifications: datosViejos.emailNotifications || false,
-            email: datosViejos.email || "",
             lastRead: datosViejos.lastRead || {}
         });
         modalRecoveryPanel.style.display = "none";
         alert(`✔️ Cuenta de ${nuevoNombre} restablecida.`);
     });
+
+    // SISTEMA CONTROLADOR DE SPAM CON BANEO ESCALABLE LOCALMENTE
+    function registrarMensajeYVerificarSpam() {
+        const ahora = Date.now();
+        timestampsMensajesRecientes.push(ahora);
+        
+        // Filtra los timestamps de los últimos 2 segundos
+        timestampsMensajesRecientes = timestampsMensajesRecientes.filter(ts => ahora - ts < 2000);
+        
+        // Umbral: Más de 3 mensajes en menos de 2 segundos es considerado SPAM
+        if (timestampsMensajesRecientes.length > 3) {
+            ejecutarBaneoProgresivoSpam();
+            return true;
+        }
+        return false;
+    }
+
+    function ejecutarBaneoProgresivoSpam() {
+        // Lee el nivel de baneo acumulado
+        let contadorBaneo = parseInt(localStorage.getItem(`chat_spam_count_${currentUser}`) || "0");
+        contadorBaneo++;
+        localStorage.setItem(`chat_spam_count_${currentUser}`, contadorBaneo);
+
+        // Escalabilidad del baneo: 5 min, 10 min, 15 min... hasta un tope de 30 minutos
+        let minutosBaneado = contadorBaneo * 5;
+        if (minutosBaneado > 30) minutosBaneado = 30;
+
+        const milisegundosBaneo = minutosBaneado * 60 * 1000;
+        const horaLiberacion = Date.now() + milisegundosBaneo;
+        
+        localStorage.setItem(`chat_spam_until_${currentUser}`, horaLiberacion);
+        verificarBaneoSpamActivo();
+    }
+
+    function verificarBaneoSpamActivo() {
+        if (!currentUser) return false;
+        
+        const ahora = Date.now();
+        const baneadoHasta = parseInt(localStorage.getItem(`chat_spam_until_${currentUser}`) || "0");
+
+        if (ahora < baneadoHasta) {
+            // Desactiva la barra de entrada del chat
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            btnAttachImage.disabled = true;
+            btnAttachVideo.disabled = true;
+            btnRecordAudio.disabled = true;
+            
+            spamBanner.style.display = "flex";
+            
+            clearInterval(intervaloBaneoSpam);
+            intervaloBaneoSpam = setInterval(() => {
+                const tiempoRestante = baneadoHasta - Date.now();
+                if (tiempoRestante <= 0) {
+                    clearInterval(intervaloBaneoSpam);
+                    spamBanner.style.display = "none";
+                    if (activeGroupId) activarInputsDeChat();
+                    messageInput.placeholder = "Escribe un mensaje...";
+                } else {
+                    const totalSegundos = Math.ceil(tiempoRestante / 1000);
+                    const min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
+                    const seg = String(totalSegundos % 60).padStart(2, '0');
+                    spamBannerText.textContent = `🚨 BANEO POR SPAM: Tu chat se desbloqueará en ${min}:${seg}`;
+                    messageInput.placeholder = `Bloqueado por spam (${min}:${seg})`;
+                }
+            }, 1000);
+
+            return true;
+        }
+        
+        spamBanner.style.display = "none";
+        return false;
+    }
 
     initUI();
 
@@ -1186,13 +1182,14 @@
             scrChat.style.display = "flex";
             listenToGroups();
             toggleSidebar(true);
+            verificarBaneoSpamActivo();
         } else {
             document.getElementById('login-error').textContent = "Contraseña incorrecta.";
             document.getElementById('login-error').style.display = "block";
         }
     });
 
-    // SISTEMA COMPLETO DE CONTEO DE MENSAJES SIN LEER
+    // CONTEO DE MENSAJES SIN LEER
     function listenToGroups() {
         const groupsRef = ref(db, 'groups');
         onValue(groupsRef, (snapshot) => {
@@ -1297,17 +1294,10 @@
         activeGroupId = groupId;
         txtChatTitle.textContent = groupFullName;
         
-        messageInput.disabled = false;
-        sendBtn.disabled = false;
         btnOpenSettings.style.display = "block";
-        
-        btnAttachImage.disabled = false;
-        btnAttachVideo.disabled = false;
-        btnRecordAudio.disabled = false;
-        btnGroupCall.style.display = "block";
+        activarInputsDeChat();
 
         if (chatListener) chatListener();
-        escucharLlamadasPorGrupo(groupId);
 
         // Marcar sala como leída instantáneamente al abrirse
         if (currentUser) {
@@ -1393,8 +1383,14 @@
     }
 
     async function sendMessage() {
+        if (verificarBaneoSpamActivo()) return;
+        
         const text = messageInput.value.trim();
         if (!text || !activeGroupId) return;
+
+        // Comprobación de spam preventiva
+        if (registrarMensajeYVerificarSpam()) return;
+
         try {
             await push(ref(db, `groups/${activeGroupId}/messages`), {
                 user: currentUser, text: text, type: "text", timestamp: serverTimestamp()
@@ -1404,10 +1400,13 @@
     }
 
     // MANEJO DE IMÁGENES
-    btnAttachImage.addEventListener('click', () => { hiddenImageInput.click(); });
+    btnAttachImage.addEventListener('click', () => { if (!verificarBaneoSpamActivo()) hiddenImageInput.click(); });
     hiddenImageInput.addEventListener('change', (e) => {
+        if (verificarBaneoSpamActivo()) return;
         const file = e.target.files[0];
         if (!file) return;
+        if (registrarMensajeYVerificarSpam()) return;
+
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function (event) {
@@ -1432,8 +1431,9 @@
     });
 
     // LÓGICA DE SUBIDA DE VÍDEOS
-    btnAttachVideo.addEventListener('click', () => { hiddenVideoInput.click(); });
+    btnAttachVideo.addEventListener('click', () => { if (!verificarBaneoSpamActivo()) hiddenVideoInput.click(); });
     hiddenVideoInput.addEventListener('change', (e) => {
+        if (verificarBaneoSpamActivo()) return;
         const file = e.target.files[0];
         if (!file) return;
 
@@ -1441,6 +1441,7 @@
             alert("⚠️ El archivo de vídeo seleccionado excede la capacidad recomendada para este canal (Máx. 12 MB). Por favor comprímelo o acórtalo.");
             return;
         }
+        if (registrarMensajeYVerificarSpam()) return;
 
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -1458,7 +1459,9 @@
 
     // GRABACIÓN DE AUDIO DE VOZ
     btnRecordAudio.addEventListener('click', async () => {
+        if (verificarBaneoSpamActivo()) return;
         if (!isRecording) {
+            if (registrarMensajeYVerificarSpam()) return;
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
@@ -1489,82 +1492,11 @@
         }
     });
 
-    // MÓDULO DE LLAMADAS GRUPALES
-    function escucharLlamadasPorGrupo(groupId) {
-        if (callStateListener) callStateListener();
-        const callRef = ref(db, `groups/${groupId}/call`);
-        
-        callStateListener = onValue(callRef, (snapshot) => {
-            if (snapshot.exists() && snapshot.val().active === true) {
-                const callData = snapshot.val();
-                activeCallGroupTracking = groupId;
-                
-                if (modalCallScreen.style.display === "flex") {
-                    callBanner.style.display = "none";
-                } else {
-                    callBannerText.textContent = `📞 Llamada en curso (Iniciada por ${callData.startedBy})`;
-                    callBanner.style.display = "flex";
-                }
-            } else {
-                callBanner.style.display = "none";
-                if (activeCallGroupTracking === groupId) {
-                    modalCallScreen.style.display = "none";
-                    clearInterval(callTimerInterval);
-                }
-            }
-        });
-    }
-
-    btnGroupCall.addEventListener('click', async () => {
-        if (!activeGroupId) return;
-        const callRef = ref(db, `groups/${activeGroupId}/call`);
-        await set(callRef, {
-            active: true,
-            startedBy: currentUser,
-            timestamp: serverTimestamp()
-        });
-        desplegarPantallaDeLlamadaActiva();
-    });
-
-    document.getElementById('btn-join-call').addEventListener('click', () => {
-        desplegarPantallaDeLlamadaActiva();
-    });
-
-    document.getElementById('btn-decline-call').addEventListener('click', () => {
-        callBanner.style.display = "none";
-    });
-
-    document.getElementById('btn-hangup').addEventListener('click', async () => {
-        if (activeCallGroupTracking) {
-            await set(ref(db, `groups/${activeCallGroupTracking}/call`), { active: false });
-        }
-    });
-
-    function desplegarPantallaDeLlamadaActiva() {
-        callBanner.style.display = "none";
-        document.getElementById('call-screen-title').textContent = cacheGrupos[activeGroupId]?.name || "Llamada de grupo";
-        document.getElementById('call-screen-status').textContent = "Conexión de voz establecida de forma segura";
-        modalCallScreen.style.display = "flex";
-        
-        let totalSegundos = 0;
-        const timerText = document.getElementById('call-timer');
-        timerText.textContent = "00:00";
-        clearInterval(callTimerInterval);
-        
-        callTimerInterval = setInterval(() => {
-            totalSegundos++;
-            let min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
-            let seg = String(totalSegundos % 60).padStart(2, '0');
-            timerText.textContent = `${min}:${seg}`;
-        }, 1000);
-    }
-
     // SALIDA DE LA APP
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
-        if (callStateListener) callStateListener();
-        clearInterval(callTimerInterval);
-        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; activeCallGroupTracking = null;
+        clearInterval(intervaloBaneoSpam);
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
         desactivarInputsDeChat();
         toggleSidebar(false);
         renderLoginUsersGrid(); 
