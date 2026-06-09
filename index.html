@@ -226,14 +226,14 @@
 
         .sidebar-footer {
             padding: 12px; border-top: 1px solid #ddd; background: #f9f9f9;
-            display: flex; flex-direction: column; gap: 8px;
+            display: flex; flex-direction: column; gap: 6px;
         }
 
         .sidebar-overlay {
             display: none; position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9;
         }
-        .sidebar-overlay.show { display: block; }
+        .sidebar-overlay.show { block; }
 
         /* VENTANAS MODALES EMERGENTES */
         .modal-screen {
@@ -314,7 +314,6 @@
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
 
-        /* Animación suave para desplegar el correo */
         #my-profile-email-input {
             transition: all 0.3s ease;
         }
@@ -348,10 +347,25 @@
             
             <div class="sidebar-footer">
                 <button class="btn-primary" id="open-modal-my-profile" style="padding:10px; font-size:14px; background-color: var(--secondary-color);">👤 Ajustes de Mi Perfil</button>
+                <button class="btn-primary" id="open-modal-private" style="padding:10px; font-size:14px; background-color: #2196f3;">💬 Iniciar Chat Privado</button>
                 <button class="btn-primary" id="open-modal-create" style="padding:10px; font-size:14px;">➕ Crear Nuevo Grupo</button>
             </div>
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <div class="modal-screen" id="modal-create-private-chat">
+            <div class="modal-header">
+                <h3 style="margin:0;">Iniciar Chat Privado</h3>
+                <button class="sidebar-close-btn" id="close-modal-private">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size:13px; color:#555; margin-bottom:10px; font-weight:bold;">Selecciona con quién quieres hablar:</div>
+                <div class="login-users-container" style="max-height: 280px;">
+                    <div class="login-users-grid" id="private-chat-users-grid"></div>
+                </div>
+                <button class="btn-primary" id="btn-confirm-private-chat" style="background-color: #2196f3;">Abrir Chat Privado</button>
+            </div>
+        </div>
 
         <div class="modal-screen" id="modal-create-group">
             <div class="modal-header">
@@ -542,6 +556,7 @@
     let listaCompletaEmojis = [];
     let nombreUsuarioEnRecuperacion = ""; 
     let selectedUserLogin = ""; 
+    let selectedUserPrivate = "";
     let targetUserProfileName = "";
 
     // ADJUNTOS AUDIO
@@ -549,7 +564,7 @@
     let audioChunks = [];
     let isRecording = false;
 
-    // --- VARIABLES CONTROL ANTISPAM Y TEMPORIZADORES ---
+    // CONTROL ANTISPAM
     let msgHistory = []; 
     let haSidoAdvertido = false;
     let tiempoRestanteBan = 0;
@@ -572,6 +587,7 @@
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
+    const modalCreatePrivate = document.getElementById('modal-create-private-chat');
 
     // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
@@ -651,6 +667,38 @@
                 card.classList.add('selected');
                 selectedUserLogin = nombre;
                 document.getElementById('login-error').style.display = "none";
+            });
+
+            gridContainer.appendChild(card);
+        });
+    }
+
+    /* RENDERIZAR CUADRÍCULA DE CONTACTOS PARA EL MODAL DE CHAT PRIVADO DIRECTO */
+    function renderPrivateChatUsersGrid() {
+        const gridContainer = document.getElementById('private-chat-users-grid');
+        gridContainer.innerHTML = "";
+        selectedUserPrivate = "";
+
+        Object.keys(cacheUsuarios).forEach(nombre => {
+            if (nombre === currentUser) return; // No chatear con uno mismo
+
+            const userData = cacheUsuarios[nombre];
+            const card = document.createElement('div');
+            card.className = 'login-user-card';
+            
+            const cuentaActiva = userData && userData.loggedOnce === true;
+            const statusLabel = cuentaActiva ? "" : `<div class="login-user-status">(sin cuenta)</div>`;
+
+            card.innerHTML = `
+                <div class="login-user-avatar">${userData.emoji || '😀'}</div>
+                <div class="login-user-name">${nombre}</div>
+                ${statusLabel}
+            `;
+
+            card.addEventListener('click', () => {
+                gridContainer.querySelectorAll('.login-user-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedUserPrivate = nombre;
             });
 
             gridContainer.appendChild(card);
@@ -850,8 +898,14 @@
         modalProfile.style.display = "flex";
     }
 
-    document.getElementById('btn-start-private-chat').addEventListener('click', async () => {
-        const targetUser = targetUserProfileName;
+    /* INICIAR CHAT PRIVADO DESDE PERFIL */
+    document.getElementById('btn-start-private-chat').addEventListener('click', () => {
+        ejecutarCreacionOAccesoChatPrivado(targetUserProfileName);
+        modalProfile.style.display = "none";
+    });
+
+    /* EJECUTAR ACCESO O CREACIÓN REAL DE CHAT PRIVADO DIRECTO */
+    async function ejecutarCreacionOAccesoChatPrivado(targetUser) {
         if (!targetUser || targetUser === currentUser) return;
 
         let existingGroupId = null;
@@ -861,8 +915,6 @@
                 existingGroupId = gId;
             }
         });
-
-        modalProfile.style.display = "none";
 
         if (existingGroupId) {
             const targetUserData = cacheUsuarios[targetUser] || {};
@@ -882,7 +934,7 @@
                 openChat(newGroupRef.key, `${targetUserData.emoji || '🔒'} ${targetUser}`);
             } catch(e) { console.error(e); }
         }
-    });
+    }
 
     function generarBancoEmojis() {
         bloquesEmoji.forEach(bloque => {
@@ -954,6 +1006,13 @@
     document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
     sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
+    /* EVENTOS DETONADORES DE MODALES */
+    document.getElementById('open-modal-private').addEventListener('click', () => {
+        toggleSidebar(false);
+        renderPrivateChatUsersGrid();
+        modalCreatePrivate.style.display = "flex";
+    });
+
     document.getElementById('open-modal-create').addEventListener('click', () => { 
         toggleSidebar(false); 
         renderCreateGroupMembers();
@@ -977,6 +1036,14 @@
         modalMyProfile.style.display = "flex";
     });
 
+    /* ACCIÓN DE CONFIRMAR CHAT PRIVADO DIRECTO */
+    document.getElementById('btn-confirm-private-chat').addEventListener('click', () => {
+        if(!selectedUserPrivate) return alert("⚠️ Selecciona un usuario para abrir una sala privada.");
+        ejecutarCreacionOAccesoChatPrivado(selectedUserPrivate);
+        modalCreatePrivate.style.display = "none";
+    });
+
+    document.getElementById('close-modal-private').addEventListener('click', () => { modalCreatePrivate.style.display = "none"; });
     document.getElementById('close-modal-create').addEventListener('click', () => { modalCreate.style.display = "none"; });
     document.getElementById('close-modal-profile').addEventListener('click', () => { modalProfile.style.display = "none"; });
     document.getElementById('close-modal-settings').addEventListener('click', () => { modalSettings.style.display = "none"; });
@@ -1281,7 +1348,6 @@
         txtChatTitle.textContent = groupFullName;
         btnOpenSettings.style.display = "block";
         
-        // RESTRICCIÓN DE ENTRADA DEPENDIENDO DE SI ESTÁ BANEADO/MUTADO TEMPORALMENTE
         if (tiempoRestanteBan <= 0) {
             messageInput.disabled = false;
             sendBtn.disabled = false;
@@ -1305,16 +1371,13 @@
             set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
         }
 
-        // ESCUCHAR AVISOS Y BANEOS GLOBALES DEL GRUPO EN TIEMPO REAL
         const noticeRef = ref(db, `groups/${groupId}/notice`);
         noticeListener = onValue(noticeRef, (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                // Mostrar solo si la notificación tiene menos de 15 segundos
                 if (Date.now() - data.time < 15000) {
                     systemNoticeBanner.textContent = data.text;
                     systemNoticeBanner.style.display = "block";
-                    // Ocultar automáticamente en pantalla pasados 15 segundos
                     setTimeout(() => {
                         systemNoticeBanner.style.display = "none";
                     }, 15000);
@@ -1407,7 +1470,6 @@
         const text = messageInput.value.trim();
         if (!text || !activeGroupId) return;
 
-        // --- INTERCEPCIÓN ANTISPAM (3 MENSAJES EN 5 SEGUNDOS) ---
         const ahora = Date.now();
         msgHistory.push(ahora);
 
@@ -1422,13 +1484,11 @@
                 const userModRef = ref(db, `users/${currentUser}`);
                 
                 if (!haSidoAdvertido) {
-                    // --- PRIMER COLOQUIO: AVISO PÚBLICO ARRIBA EN ROJO ---
                     haSidoAdvertido = true;
                     messageInput.value = "";
                     
                     await update(userModRef, { warned: true });
                     
-                    // Publicar aviso en Firebase para que salga arriba en rojo a todos
                     await set(ref(db, `groups/${activeGroupId}/notice`), {
                         text: `⚠️ AVISO: ¡${currentUser} está haciendo Flooding/Spam muy rápido!`,
                         time: Date.now()
@@ -1450,16 +1510,13 @@
                     msgHistory = [];
                     return;
                 } else {
-                    // --- SEGUNDO COLOQUIO: BANEO TEMPORAL (MUTEO SIN EXPULSIÓN DE LA CUENTA) ---
                     messageInput.value = "";
                     
-                    // Publicar baneo en Firebase para que salga arriba en rojo a todos
                     await set(ref(db, `groups/${activeGroupId}/notice`), {
                         text: `❌ SILENCIADO: ¡${currentUser} ha sido bloqueado temporalmente por Spam!`,
                         time: Date.now()
                     });
 
-                    // Iniciar cuenta atrás de protección de 60 segundos
                     tiempoRestanteBan = 60;
                     messageInput.disabled = true;
                     sendBtn.disabled = true;
@@ -1495,7 +1552,6 @@
                 }
             }
         }
-        // --- FIN CONTROL ANTISPAM ---
 
         try {
             await push(ref(db, `groups/${activeGroupId}/messages`), {
@@ -1601,7 +1657,7 @@
         msgHistory = [];
         haSidoAdvertido = false;
 
-        currentUser = ""; activeGroupId = ""; selectedUserLogin = "";
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; selectedUserPrivate = "";
         desactivarInputsDeChat();
         toggleSidebar(false);
         renderLoginUsersGrid(); 
