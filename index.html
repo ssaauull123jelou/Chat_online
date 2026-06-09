@@ -315,7 +315,7 @@
         .system-notice-banner {
             background: #d32f2f; color: white; padding: 10px 15px; text-align: center;
             font-weight: bold; font-size: 13px; display: none; z-index: 3;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-sizing: border-box; word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-shadow: 0 2px 5px rgba(0,0,0,0.2); box-sizing: border-box; word-wrap: break-word;
         }
         .notif-item {
             background: #fff3cd; border-left: 5px solid #ff9800; padding: 12px;
@@ -380,8 +380,9 @@
             </div>
             
             <div class="tab-header">
-                <div class="tab-btn active" id="tab-btn-anuncios">Anuncios Oficiales</div>
+                <div class="tab-btn active" id="tab-btn-anuncios">Anuncios</div>
                 <div class="tab-btn" id="tab-btn-baneos" style="color: #c62828;">🔨 Baneos</div>
+                <div class="tab-btn" id="tab-btn-reportes" style="color: #e74c3c;">🚩 Reportes</div>
             </div>
 
             <div class="modal-body" style="background: #fdfefe; display: flex; flex-direction: column; padding: 0;">
@@ -415,6 +416,22 @@
                         <input type="text" id="saul-ban-reason" placeholder="Motivo del baneo (ej: Comportamiento inadecuado)..." style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box;">
                         
                         <button class="btn-primary" id="btn-saul-send-ban" style="background:#f44336; padding:10px; font-size:14px;">Aplicar Sanción Global</button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-reportes">
+                    <div id="saul-reports-container" style="display:none; flex:1; overflow-y:auto; padding:10px;">
+                        <h5 style="margin:0 0 10px 0; color:#c0392b; font-size:13px; text-transform:uppercase; border-bottom:1px solid #f1c40f; padding-bottom:3px;">Buzón Confidencial de Reportes (Solo Tú)</h5>
+                        <div id="report-logs-box">
+                            <div style="text-align:center; color:#777; font-size:13px; padding:20px;">Cargando reportes recibidos...</div>
+                        </div>
+                    </div>
+
+                    <div id="everyone-report-form" style="padding:15px; border-top:1px solid #ddd; background:#f9f9f9; margin-top:auto;">
+                        <h5 style="margin:0 0 8px 0; color:#34495e; font-size:13px; font-weight:bold;">⚠️ Crear un Reporte / Queja</h5>
+                        <p style="margin:0 0 10px 0; font-size:12px; color:#7f8c8d;">Tu reporte será enviado de forma segura y directa. Únicamente Saúl podrá leer la información enviada aquí.</p>
+                        <input type="text" id="user-report-input" placeholder="Describe lo ocurrido detalladamente..." style="width:100%; padding:11px; margin-bottom:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box;">
+                        <button class="btn-primary" id="btn-send-report" style="background:#e74c3c; padding:12px; font-size:14px;">Enviar Reporte Confidencial</button>
                     </div>
                 </div>
 
@@ -609,6 +626,7 @@
     let chatListener = null;
     let systemNotifListener = null;
     let banLogListener = null;
+    let reportsListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
@@ -654,12 +672,20 @@
     const btnSaulSendNotif = document.getElementById('btn-saul-send-notif');
     const notifBadge = document.getElementById('notif-badge');
 
-    // DOM NUEVAS PESTAÑAS (ANUNCIOS Y BANEOS)
+    // DOM PESTAÑAS
     const tabBtnAnuncios = document.getElementById('tab-btn-anuncios');
     const tabBtnBaneos = document.getElementById('tab-btn-baneos');
+    const tabBtnReportes = document.getElementById('tab-btn-reportes');
+    
     const tabAnuncios = document.getElementById('tab-anuncios');
     const tabBaneos = document.getElementById('tab-baneos');
+    const tabReportes = document.getElementById('tab-reportes');
+    
     const banLogsBox = document.getElementById('ban-logs-box');
+    const reportLogsBox = document.getElementById('report-logs-box');
+    const saulReportsContainer = document.getElementById('saul-reports-container');
+    const userReportInput = document.getElementById('user-report-input');
+    const btnSendReport = document.getElementById('btn-send-report');
     
     // DOM FORMULARIO BANEOS SAUL
     const saulBanMenu = document.getElementById('saul-ban-menu');
@@ -679,14 +705,34 @@
         generarBancoEmojis();
         sincronizarYEscucharUsuarios();
         
-        // Pestañas lógica
+        // Pestañas lógica de navegación
         tabBtnAnuncios.addEventListener('click', () => {
-            tabBtnAnuncios.classList.add('active'); tabBtnBaneos.classList.remove('active');
-            tabAnuncios.classList.add('active'); tabBaneos.classList.remove('active');
+            tabBtnAnuncios.classList.add('active'); tabBtnBaneos.classList.remove('active'); tabBtnReportes.classList.remove('active');
+            tabAnuncios.classList.add('active'); tabBaneos.classList.remove('active'); tabReportes.classList.remove('active');
         });
         tabBtnBaneos.addEventListener('click', () => {
-            tabBtnBaneos.classList.add('active'); tabBtnAnuncios.classList.remove('active');
-            tabBaneos.classList.add('active'); tabAnuncios.classList.remove('active');
+            tabBtnAnuncios.classList.remove('active'); tabBtnBaneos.classList.add('active'); tabBtnReportes.classList.remove('active');
+            tabAnuncios.classList.remove('active'); tabBaneos.classList.add('active'); tabReportes.classList.remove('active');
+        });
+        tabBtnReportes.addEventListener('click', () => {
+            tabBtnAnuncios.classList.remove('active'); tabBtnBaneos.classList.remove('active'); tabBtnReportes.classList.add('active');
+            tabAnuncios.classList.remove('active'); tabBaneos.classList.remove('active'); tabReportes.classList.add('active');
+        });
+
+        // Botón para enviar reportes (Todos los usuarios)
+        btnSendReport.addEventListener('click', async () => {
+            const textoReporte = userReportInput.value.trim();
+            if (!textoReporte) return alert("❌ Por favor, escribe un mensaje descriptivo antes de enviar.");
+            
+            try {
+                await push(ref(db, 'reports'), {
+                    user: currentUser,
+                    text: textoReporte,
+                    timestamp: serverTimestamp()
+                });
+                userReportInput.value = "";
+                alert("🔒 Reporte enviado con éxito. Ha sido archivado en el buzón privado de Saúl.");
+            } catch (e) { console.error(e); }
         });
     }
 
@@ -1190,7 +1236,7 @@
         });
     }
 
-    // SISTEMA DE ESCUCHA DE BANEOS (NUEVO)
+    // SISTEMA DE ESCUCHA DE BANEOS
     function escucharHistorialBaneos() {
         if (banLogListener) return;
         const bansRef = ref(db, 'ban_logs');
@@ -1221,6 +1267,36 @@
         });
     }
 
+    // SISTEMA ESCUCHA EXCLUSIVO DE REPORTES PARA SAÚL
+    function escucharBuzonReportesSaul() {
+        if (reportsListener) return;
+        const reportsRef = ref(db, 'reports');
+        reportsListener = onValue(reportsRef, (snapshot) => {
+            reportLogsBox.innerHTML = "";
+            if(snapshot.exists()) {
+                let html = "";
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    const f = new Date(data.timestamp);
+                    const horaStr = f.toLocaleDateString('es-ES', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+                    html += `
+                        <div class="ban-item" style="background:#fff3e0; border-left: 5px solid #e67e22;">
+                            <div class="ban-header" style="color:#e65100;">
+                                <span>🚩 Reportante: ${data.user}</span>
+                                <span>${horaStr}</span>
+                            </div>
+                            <div style="color:#2c3e50; font-weight:500; margin-top:5px; word-wrap:break-word;">${data.text}</div>
+                        </div>
+                    `;
+                });
+                reportLogsBox.innerHTML = html;
+                reportLogsBox.scrollTop = reportLogsBox.scrollHeight;
+            } else {
+                reportLogsBox.innerHTML = `<div style="text-align:center; color:#777; font-size:13px; padding:20px;">No hay reportes de usuarios archivados en la plataforma.</div>`;
+            }
+        });
+    }
+
     function comprobarGloboNotificaciones() {
         if (!currentUser || !cacheUsuarios[currentUser]) return;
         const lastReadNotif = cacheUsuarios[currentUser].lastReadNotif || 0;
@@ -1231,7 +1307,7 @@
         }
     }
 
-    // ABRIR MODAL DE NOTIFICACIONES (SAÚL)
+    // ABRIR CENTRO DE ALERTAS
     document.getElementById('open-modal-notifications').addEventListener('click', async () => {
         toggleSidebar(false);
         modalNotifications.style.display = "flex";
@@ -1239,7 +1315,10 @@
         if (currentUser === "Saúl") {
             saulNotifMenu.style.display = "block";
             saulBanMenu.style.display = "block";
+            saulReportsContainer.style.display = "block"; // Activa visualización de reportes para Saúl
             
+            escucharBuzonReportesSaul(); // Enciende lectura en la BD
+
             // Llenar select de baneos
             saulBanUser.innerHTML = '<option value="">Selecciona usuario a banear...</option>';
             Object.keys(cacheUsuarios).forEach(nombre => {
@@ -1250,6 +1329,7 @@
         } else {
             saulNotifMenu.style.display = "none";
             saulBanMenu.style.display = "none";
+            saulReportsContainer.style.display = "none"; // Oculta visualización para el resto
         }
 
         if (currentUser) {
@@ -1272,7 +1352,7 @@
         } catch(e) { console.error(e); }
     });
 
-    // BOTÓN PARA APLICAR BANEO MANUAL COMO SAÚL
+    // APLICAR BANEO MANUAL COMO SAÚL
     btnSaulSendBan.addEventListener('click', async () => {
         if (currentUser !== "Saúl") return;
         const targetUser = saulBanUser.value;
@@ -1288,13 +1368,11 @@
             const targetUserData = cacheUsuarios[targetUser] || {};
             const totalBaneosPrevios = targetUserData.banCount || 0;
             
-            // Actualizar status del usuario en base de datos
             await update(ref(db, `users/${targetUser}`), {
                 banCount: totalBaneosPrevios + 1,
                 banUntil: Date.now() + msBaneo
             });
 
-            // Guardar en el log de sanciones
             await push(ref(db, 'ban_logs'), {
                 user: targetUser,
                 hours: horas,
@@ -1858,6 +1936,7 @@
         if (chatListener) chatListener();
         if (systemNotifListener) systemNotifListener();
         if (banLogListener) banLogListener();
+        if (reportsListener) reportsListener();
         
         clearInterval(banInterval);
         msgHistory = [];
