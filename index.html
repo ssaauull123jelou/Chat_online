@@ -149,6 +149,10 @@
         .header h3 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .header-actions { display: flex; gap: 12px; align-items: center; }
+        .btn-header-action {
+            background: none; border: none; color: white;
+            font-size: 20px; cursor: pointer; display: none; padding: 4px;
+        }
         .btn-settings {
             background: rgba(255,255,255,0.2); color: white; border: none;
             padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; display: none;
@@ -156,21 +160,6 @@
         .btn-logout {
             background: var(--secondary-color); color: white; border: none;
             padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
-        }
-
-        /* BANNER ROJO DE AVISOS Y BANEOS */
-        .system-notice-banner {
-            background: #d32f2f;
-            color: white;
-            padding: 10px 15px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 13px;
-            display: none;
-            z-index: 3;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            box-sizing: border-box;
-            word-wrap: break-word;
         }
 
         /* MENÚ LATERAL (SIDEBAR) */
@@ -207,6 +196,14 @@
         .group-item.active-group { background: #e1f5fe; color: var(--primary-color); }
         .group-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%; }
 
+        /* ELEMENTOS DE LISTA DE CHAT PRIVADO */
+        .private-user-item {
+            display: flex; align-items: center; padding: 11px 10px;
+            border-bottom: 1px solid #eee; cursor: pointer; border-radius: 6px;
+            transition: background 0.2s; font-size: 14px;
+        }
+        .private-user-item:hover { background: #f0f2f5; }
+
         /* GLOBO DE MENSAJES SIN LEER ESTILO WHATSAPP */
         .unread-badge {
             background: #25d366;
@@ -233,7 +230,7 @@
             display: none; position: absolute; top: 0; left: 0;
             width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9;
         }
-        .sidebar-overlay.show { block; }
+        .sidebar-overlay.show { display: block; }
 
         /* VENTANAS MODALES EMERGENTES */
         .modal-screen {
@@ -301,7 +298,6 @@
         /* ENTRADA DE TEXTO Y ADJUNTOS */
         .input-area { display: flex; padding: 10px; background: #f0f0f0; z-index: 2; align-items: center; }
         .input-area input[type="text"] { flex: 1; margin: 0; border-radius: 20px; padding: 12px 15px; border: 1px solid #ccc; font-size: 15px; }
-        .input-area input[type="text"]:disabled { background-color: #ffebee; color: #c62828; font-weight: bold; }
         .input-area button {
             background: var(--primary-color); color: white; border: none;
             padding: 12px 20px; margin-left: 6px; border-radius: 20px; cursor: pointer; font-weight: bold;
@@ -314,8 +310,20 @@
         }
         .input-area button.btn-icon:disabled { opacity: 0.4; cursor: not-allowed !important; }
 
-        #my-profile-email-input {
-            transition: all 0.3s ease;
+        /* INTERFAZ DE LLAMADAS */
+        #call-banner {
+            display: none; background: #25d366; color: white; padding: 10px 15px;
+            text-align: center; font-weight: bold; font-size: 13px; align-items: center;
+            justify-content: space-between; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        @keyframes avatarPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+            70% { transform: scale(1.06); box-shadow: 0 0 0 20px rgba(37, 211, 102, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
+        .pulsing-avatar {
+            animation: avatarPulse 1.8s infinite ease-in-out;
+            background: rgba(255,255,255,0.1); border-radius: 50%; padding: 25px;
         }
     </style>
 </head>
@@ -337,6 +345,14 @@
     </div>
 
     <div class="chat-screen" id="scr-chat">
+        
+        <div id="call-banner">
+            <span id="call-banner-text">📞 Llamada de grupo en curso...</span>
+            <div style="display:flex; gap:8px;">
+                <button id="btn-join-call" style="background:white; color:#25d366; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Unirse</button>
+                <button id="btn-decline-call" style="background:rgba(0,0,0,0.2); color:white; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Ignorar</button>
+            </div>
+        </div>
 
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -347,23 +363,20 @@
             
             <div class="sidebar-footer">
                 <button class="btn-primary" id="open-modal-my-profile" style="padding:10px; font-size:14px; background-color: var(--secondary-color);">👤 Ajustes de Mi Perfil</button>
-                <button class="btn-primary" id="open-modal-private" style="padding:10px; font-size:14px; background-color: #2196f3;">💬 Iniciar Chat Privado</button>
+                <button class="btn-primary" id="open-modal-private" style="padding:10px; font-size:14px; background-color: #009688;">💬 Crear Chat Privado</button>
                 <button class="btn-primary" id="open-modal-create" style="padding:10px; font-size:14px;">➕ Crear Nuevo Grupo</button>
             </div>
         </div>
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-        <div class="modal-screen" id="modal-create-private-chat">
+        <div class="modal-screen" id="modal-start-private">
             <div class="modal-header">
                 <h3 style="margin:0;">Iniciar Chat Privado</h3>
-                <button class="sidebar-close-btn" id="close-modal-private">✕</button>
+                <button class="sidebar-close-btn" id="close-modal-private-chat">✕</button>
             </div>
             <div class="modal-body">
-                <div style="font-size:13px; color:#555; margin-bottom:10px; font-weight:bold;">Selecciona con quién quieres hablar:</div>
-                <div class="login-users-container" style="max-height: 280px;">
-                    <div class="login-users-grid" id="private-chat-users-grid"></div>
-                </div>
-                <button class="btn-primary" id="btn-confirm-private-chat" style="background-color: #2196f3;">Abrir Chat Privado</button>
+                <div style="font-size:13px; color:#555; margin-bottom:12px; font-weight:bold;">Selecciona un usuario para hablar directamente:</div>
+                <div id="private-users-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px; padding: 5px; background: #fafafa;"></div>
             </div>
         </div>
 
@@ -474,18 +487,31 @@
             </div>
         </div>
 
+        <div class="modal-screen" id="modal-call-screen" style="background:#0b141a; color:white; z-index: 18;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; text-align:center; padding:20px;">
+                <div class="pulsing-avatar">
+                    <div id="call-screen-avatar" style="font-size: 70px; user-select: none;">📞</div>
+                </div>
+                <h2 id="call-screen-title" style="margin:10px 0 0 0; font-size:24px;">Llamada de Voz</h2>
+                <div id="call-screen-status" style="color:#25d366; font-size:14px; font-weight:500;">Conectando con el grupo...</div>
+                <div id="call-timer" style="font-size:20px; font-family:monospace; margin-top:10px; letter-spacing:1px; background:rgba(255,255,255,0.1); padding:4px 14px; border-radius:20px;">00:00</div>
+            </div>
+            <div style="padding:35px; display:flex; justify-content:center; background:#111b21; box-shadow: 0 -4px 10px rgba(0,0,0,0.3);">
+                <button id="btn-hangup" style="background:#f44336; color:white; border:none; border-radius:50%; width:65px; height:65px; font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🛑</button>
+            </div>
+        </div>
+
         <div class="header">
             <div class="header-left">
                 <button class="menu-toggle-btn" id="btn-open-sidebar">☰</button>
                 <h3 id="txt-chat-title">Selecciona un grupo</h3>
             </div>
             <div class="header-actions">
+                <button class="btn-header-action" id="btn-group-call" title="Iniciar Llamada en este grupo">📞</button>
                 <button class="btn-settings" id="btn-open-settings">⚙️ Ajustes</button>
                 <button class="btn-logout" id="btn-logout">Salir</button>
             </div>
         </div>
-
-        <div class="system-notice-banner" id="system-notice-banner"></div>
 
         <div class="messages-box" id="messages-box">
             <div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>
@@ -550,25 +576,20 @@
     let currentUser = "";
     let activeGroupId = "";
     let chatListener = null;
-    let noticeListener = null;
+    let callStateListener = null;
     let cacheGrupos = {};
     let cacheUsuarios = {}; 
     let listaCompletaEmojis = [];
     let nombreUsuarioEnRecuperacion = ""; 
     let selectedUserLogin = ""; 
-    let selectedUserPrivate = "";
     let targetUserProfileName = "";
 
-    // ADJUNTOS AUDIO
+    // ADJUNTOS AUDIO/LLAMADAS
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
-
-    // CONTROL ANTISPAM
-    let msgHistory = []; 
-    let haSidoAdvertido = false;
-    let tiempoRestanteBan = 0;
-    let banInterval = null;
+    let callTimerInterval = null;
+    let activeCallGroupTracking = null;
 
     const scrLogin = document.getElementById('scr-login');
     const scrChat = document.getElementById('scr-chat');
@@ -580,21 +601,25 @@
     const sendBtn = document.getElementById('send-btn');
     const txtChatTitle = document.getElementById('txt-chat-title');
     const btnOpenSettings = document.getElementById('btn-open-settings');
-    const systemNoticeBanner = document.getElementById('system-notice-banner');
 
     const modalCreate = document.getElementById('modal-create-group');
     const modalSettings = document.getElementById('modal-settings-group');
     const modalProfile = document.getElementById('modal-user-profile');
     const modalMyProfile = document.getElementById('modal-my-profile');
     const modalRecoveryPanel = document.getElementById('modal-recovery-panel');
-    const modalCreatePrivate = document.getElementById('modal-create-private-chat');
+    const modalCallScreen = document.getElementById('modal-call-screen');
+    const modalStartPrivate = document.getElementById('modal-start-private');
+    const privateUsersList = document.getElementById('private-users-list');
 
     // ADJUNTOS DOM
     const btnAttachImage = document.getElementById('btn-attach-image');
     const btnAttachVideo = document.getElementById('btn-attach-video');
     const btnRecordAudio = document.getElementById('btn-record-audio');
+    const btnGroupCall = document.getElementById('btn-group-call');
     const hiddenImageInput = document.getElementById('hidden-image-input');
     const hiddenVideoInput = document.getElementById('hidden-video-input');
+    const callBanner = document.getElementById('call-banner');
+    const callBannerText = document.getElementById('call-banner-text');
 
     function initUI() {
         generarBancoEmojis();
@@ -628,8 +653,6 @@
                         loggedOnce: false,
                         emailNotifications: false,
                         email: "",
-                        warned: false,
-                        banned: false,
                         lastRead: {}
                     };
                 });
@@ -667,38 +690,6 @@
                 card.classList.add('selected');
                 selectedUserLogin = nombre;
                 document.getElementById('login-error').style.display = "none";
-            });
-
-            gridContainer.appendChild(card);
-        });
-    }
-
-    /* RENDERIZAR CUADRÍCULA DE CONTACTOS PARA EL MODAL DE CHAT PRIVADO DIRECTO */
-    function renderPrivateChatUsersGrid() {
-        const gridContainer = document.getElementById('private-chat-users-grid');
-        gridContainer.innerHTML = "";
-        selectedUserPrivate = "";
-
-        Object.keys(cacheUsuarios).forEach(nombre => {
-            if (nombre === currentUser) return; // No chatear con uno mismo
-
-            const userData = cacheUsuarios[nombre];
-            const card = document.createElement('div');
-            card.className = 'login-user-card';
-            
-            const cuentaActiva = userData && userData.loggedOnce === true;
-            const statusLabel = cuentaActiva ? "" : `<div class="login-user-status">(sin cuenta)</div>`;
-
-            card.innerHTML = `
-                <div class="login-user-avatar">${userData.emoji || '😀'}</div>
-                <div class="login-user-name">${nombre}</div>
-                ${statusLabel}
-            `;
-
-            card.addEventListener('click', () => {
-                gridContainer.querySelectorAll('.login-user-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                selectedUserPrivate = nombre;
             });
 
             gridContainer.appendChild(card);
@@ -758,6 +749,30 @@
                 `;
             }
             container.appendChild(row);
+        });
+    }
+
+    // RENDERIZAR LISTA PARA EMPEZAR UN CHAT PRIVADO DIRECTO
+    function renderPrivateUsersList() {
+        privateUsersList.innerHTML = "";
+        Object.keys(cacheUsuarios).forEach(nombre => {
+            if (nombre === currentUser) return; 
+            const userData = cacheUsuarios[nombre];
+            const cuentaActiva = userData && userData.loggedOnce === true;
+
+            let row = document.createElement('div');
+            row.className = 'private-user-item';
+            
+            let emoji = userData.emoji || "😀";
+            let statusText = cuentaActiva ? "" : " <span style='color:#bbb; font-size:12px;'>(sin cuenta activa)</span>";
+            
+            row.innerHTML = `<span>${emoji} <b>${nombre}</b>${statusText}</span>`;
+            
+            row.addEventListener('click', () => {
+                modalStartPrivate.style.display = "none";
+                iniciarOAbrirChatPrivado(nombre);
+            });
+            privateUsersList.appendChild(row);
         });
     }
 
@@ -898,14 +913,8 @@
         modalProfile.style.display = "flex";
     }
 
-    /* INICIAR CHAT PRIVADO DESDE PERFIL */
-    document.getElementById('btn-start-private-chat').addEventListener('click', () => {
-        ejecutarCreacionOAccesoChatPrivado(targetUserProfileName);
-        modalProfile.style.display = "none";
-    });
-
-    /* EJECUTAR ACCESO O CREACIÓN REAL DE CHAT PRIVADO DIRECTO */
-    async function ejecutarCreacionOAccesoChatPrivado(targetUser) {
+    // LOGICA MAESTRA PARA BUSCAR O CREAR UN CHAT PRIVADO
+    async function iniciarOAbrirChatPrivado(targetUser) {
         if (!targetUser || targetUser === currentUser) return;
 
         let existingGroupId = null;
@@ -936,6 +945,11 @@
         }
     }
 
+    document.getElementById('btn-start-private-chat').addEventListener('click', () => {
+        modalProfile.style.display = "none";
+        iniciarOAbrirChatPrivado(targetUserProfileName);
+    });
+
     function generarBancoEmojis() {
         bloquesEmoji.forEach(bloque => {
             for (let i = Math.min(bloque.start, bloque.end); i <= Math.max(bloque.start, bloque.end); i++) {
@@ -950,14 +964,14 @@
         const contenedor = document.getElementById('emoji-list-container');
         contenedor.innerHTML = "";
         
-        let categoriasAgrupadas = {};
+        let categoriesAgrupadas = {};
         lista.forEach(item => {
             let categoria = item.cat || "Emojis";
-            if (!categoriasAgrupadas[categoria]) categoriasAgrupadas[categoria] = [];
-            categoriasAgrupadas[categoria].push(item.char);
+            if (!categoriesAgrupadas[categoria]) categoriesAgrupadas[categoria] = [];
+            categoriesAgrupadas[categoria].push(item.char);
         });
 
-        for (let cat in categoriasAgrupadas) {
+        for (let cat in categoriesAgrupadas) {
             let titulo = document.createElement('div');
             titulo.className = 'emoji-category-title';
             titulo.textContent = cat;
@@ -966,7 +980,7 @@
             let grid = document.createElement('div');
             grid.className = 'emoji-grid';
 
-            categoriasAgrupadas[cat].forEach(emoji => {
+            categoriesAgrupadas[cat].forEach(emoji => {
                 let span = document.createElement('span');
                 span.className = 'emoji-item';
                 span.textContent = emoji;
@@ -984,13 +998,14 @@
         renderizarEmojis(filtrados);
     });
 
+    // REVISIÓN CLAVE: update() mantiene intacto el historial de mensajes
     async function verficarChatGrupalPermanente() {
         const globalGroupRef = ref(db, 'groups/chat_grupal_fijo');
         let membersGlobales = {};
         Object.keys(cacheUsuarios).forEach(user => { membersGlobales[user] = true; });
         let hostsGlobales = { "Saúl": true };
 
-        await set(globalGroupRef, {
+        await update(globalGroupRef, {
             name: "Chat Grupal",
             icon: "🌍",
             members: membersGlobales,
@@ -1006,17 +1021,17 @@
     document.getElementById('btn-close-sidebar').addEventListener('click', () => toggleSidebar(false));
     sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
-    /* EVENTOS DETONADORES DE MODALES */
-    document.getElementById('open-modal-private').addEventListener('click', () => {
-        toggleSidebar(false);
-        renderPrivateChatUsersGrid();
-        modalCreatePrivate.style.display = "flex";
-    });
-
     document.getElementById('open-modal-create').addEventListener('click', () => { 
         toggleSidebar(false); 
         renderCreateGroupMembers();
         modalCreate.style.display = "flex"; 
+    });
+
+    // EVENTO BOTÓN NUEVO: CREAR CHAT PRIVADO
+    document.getElementById('open-modal-private').addEventListener('click', () => {
+        toggleSidebar(false);
+        renderPrivateUsersList();
+        modalStartPrivate.style.display = "flex";
     });
 
     document.getElementById('open-modal-my-profile').addEventListener('click', () => {
@@ -1036,19 +1051,12 @@
         modalMyProfile.style.display = "flex";
     });
 
-    /* ACCIÓN DE CONFIRMAR CHAT PRIVADO DIRECTO */
-    document.getElementById('btn-confirm-private-chat').addEventListener('click', () => {
-        if(!selectedUserPrivate) return alert("⚠️ Selecciona un usuario para abrir una sala privada.");
-        ejecutarCreacionOAccesoChatPrivado(selectedUserPrivate);
-        modalCreatePrivate.style.display = "none";
-    });
-
-    document.getElementById('close-modal-private').addEventListener('click', () => { modalCreatePrivate.style.display = "none"; });
     document.getElementById('close-modal-create').addEventListener('click', () => { modalCreate.style.display = "none"; });
     document.getElementById('close-modal-profile').addEventListener('click', () => { modalProfile.style.display = "none"; });
     document.getElementById('close-modal-settings').addEventListener('click', () => { modalSettings.style.display = "none"; });
     document.getElementById('close-modal-my-profile').addEventListener('click', () => { modalMyProfile.style.display = "none"; });
     document.getElementById('close-modal-recovery').addEventListener('click', () => { modalRecoveryPanel.style.display = "none"; });
+    document.getElementById('close-modal-private-chat').addEventListener('click', () => { modalStartPrivate.style.display = "none"; });
 
     btnOpenSettings.addEventListener('click', () => { 
         const infoGrupo = cacheGrupos[activeGroupId] || {};
@@ -1112,7 +1120,6 @@
                 await remove(ref(db, `groups/${activeGroupId}/hosts/${currentUser}`));
                 modalSettings.style.display = "none";
                 if (chatListener) chatListener();
-                if (noticeListener) noticeListener();
                 
                 activeGroupId = "";
                 desactivarInputsDeChat();
@@ -1127,11 +1134,10 @@
         btnAttachImage.disabled = true;
         btnAttachVideo.disabled = true;
         btnRecordAudio.disabled = true;
+        btnGroupCall.style.display = "none";
         messageInput.value = "";
-        messageInput.placeholder = "Escribe un mensaje...";
         txtChatTitle.textContent = "Selecciona un grupo";
         btnOpenSettings.style.display = "none";
-        systemNoticeBanner.style.display = "none";
         messagesBox.innerHTML = `<div class="placeholder-text">Pulsa el botón ☰ arriba a la izquierda para abrir tus grupos o crear uno nuevo.</div>`;
     }
 
@@ -1161,8 +1167,6 @@
             loggedOnce: true,
             emailNotifications: emailNotif,
             email: emailNotif ? nuevoCorreo : (misDatos.email || ""),
-            warned: misDatos.warned || false,
-            banned: misDatos.banned || false,
             lastRead: misDatos.lastRead || {}
         });
         modalMyProfile.style.display = "none";
@@ -1184,8 +1188,6 @@
             loggedOnce: true,
             emailNotifications: datosViejos.emailNotifications || false,
             email: datosViejos.email || "",
-            warned: datosViejos.warned || false,
-            banned: datosViejos.banned || false,
             lastRead: datosViejos.lastRead || {}
         });
         modalRecoveryPanel.style.display = "none";
@@ -1226,10 +1228,6 @@
 
         } else if (cuentaExiste && cuentaExiste.password === pass) {
             currentUser = user;
-            haSidoAdvertido = cuentaExiste.warned === true;
-            msgHistory = [];
-            tiempoRestanteBan = 0;
-
             document.getElementById('login-password').value = "";
             document.getElementById('login-error').style.display = "none";
             if (!cuentaExiste.loggedOnce) await update(ref(db, `users/${user}`), { loggedOnce: true });
@@ -1244,6 +1242,7 @@
         }
     });
 
+    // ESCUCHAR GRUPOS Y CHATS ACTIVOS
     function listenToGroups() {
         const groupsRef = ref(db, 'groups');
         onValue(groupsRef, (snapshot) => {
@@ -1346,48 +1345,22 @@
     function openChat(groupId, groupFullName) {
         activeGroupId = groupId;
         txtChatTitle.textContent = groupFullName;
+        
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
         btnOpenSettings.style.display = "block";
         
-        if (tiempoRestanteBan <= 0) {
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            btnAttachImage.disabled = false;
-            btnAttachVideo.disabled = false;
-            btnRecordAudio.disabled = false;
-            messageInput.placeholder = "Escribe un mensaje...";
-        } else {
-            messageInput.disabled = true;
-            sendBtn.disabled = true;
-            btnAttachImage.disabled = true;
-            btnAttachVideo.disabled = true;
-            btnRecordAudio.disabled = true;
-            messageInput.placeholder = `Tiempo restante: ${tiempoRestanteBan}s`;
-        }
+        btnAttachImage.disabled = false;
+        btnAttachVideo.disabled = false;
+        btnRecordAudio.disabled = false;
+        btnGroupCall.style.display = "block";
 
         if (chatListener) chatListener();
-        if (noticeListener) noticeListener();
+        escucharLlamadasPorGrupo(groupId);
 
         if (currentUser) {
             set(ref(db, `users/${currentUser}/lastRead/${groupId}`), Date.now());
         }
-
-        const noticeRef = ref(db, `groups/${groupId}/notice`);
-        noticeListener = onValue(noticeRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                if (Date.now() - data.time < 15000) {
-                    systemNoticeBanner.textContent = data.text;
-                    systemNoticeBanner.style.display = "block";
-                    setTimeout(() => {
-                        systemNoticeBanner.style.display = "none";
-                    }, 15000);
-                } else {
-                    systemNoticeBanner.style.display = "none";
-                }
-            } else {
-                systemNoticeBanner.style.display = "none";
-            }
-        });
 
         const messagesRef = query(ref(db, `groups/${groupId}/messages`), limitToLast(100));
         let lastRenderedDate = "";
@@ -1469,90 +1442,6 @@
     async function sendMessage() {
         const text = messageInput.value.trim();
         if (!text || !activeGroupId) return;
-
-        const ahora = Date.now();
-        msgHistory.push(ahora);
-
-        if (msgHistory.length > 3) {
-            msgHistory.shift();
-        }
-
-        if (msgHistory.length === 3) {
-            const tiempoTranscurrido = msgHistory[2] - msgHistory[0];
-
-            if (tiempoTranscurrido <= 5000) {
-                const userModRef = ref(db, `users/${currentUser}`);
-                
-                if (!haSidoAdvertido) {
-                    haSidoAdvertido = true;
-                    messageInput.value = "";
-                    
-                    await update(userModRef, { warned: true });
-                    
-                    await set(ref(db, `groups/${activeGroupId}/notice`), {
-                        text: `⚠️ AVISO: ¡${currentUser} está haciendo Flooding/Spam muy rápido!`,
-                        time: Date.now()
-                    });
-                    
-                    messageInput.disabled = true;
-                    sendBtn.disabled = true;
-                    messageInput.placeholder = "Advertencia por Spam activa...";
-                    
-                    setTimeout(() => {
-                        if (activeGroupId && tiempoRestanteBan <= 0) {
-                            messageInput.disabled = false;
-                            sendBtn.disabled = false;
-                            messageInput.placeholder = "Escribe un mensaje...";
-                            messageInput.focus();
-                        }
-                    }, 4000);
-                    
-                    msgHistory = [];
-                    return;
-                } else {
-                    messageInput.value = "";
-                    
-                    await set(ref(db, `groups/${activeGroupId}/notice`), {
-                        text: `❌ SILENCIADO: ¡${currentUser} ha sido bloqueado temporalmente por Spam!`,
-                        time: Date.now()
-                    });
-
-                    tiempoRestanteBan = 60;
-                    messageInput.disabled = true;
-                    sendBtn.disabled = true;
-                    btnAttachImage.disabled = true;
-                    btnAttachVideo.disabled = true;
-                    btnRecordAudio.disabled = true;
-                    messageInput.placeholder = `Tiempo restante: ${tiempoRestanteBan}s`;
-
-                    clearInterval(banInterval);
-                    banInterval = setInterval(async () => {
-                        tiempoRestanteBan--;
-                        if (tiempoRestanteBan <= 0) {
-                            clearInterval(banInterval);
-                            haSidoAdvertido = false;
-                            await update(userModRef, { warned: false });
-
-                            if (activeGroupId) {
-                                messageInput.disabled = false;
-                                sendBtn.disabled = false;
-                                btnAttachImage.disabled = false;
-                                btnAttachVideo.disabled = false;
-                                btnRecordAudio.disabled = false;
-                                messageInput.placeholder = "Escribe un mensaje...";
-                                messageInput.focus();
-                            }
-                        } else {
-                            messageInput.placeholder = `Tiempo restante: ${tiempoRestanteBan}s`;
-                        }
-                    }, 1000);
-
-                    msgHistory = [];
-                    return;
-                }
-            }
-        }
-
         try {
             await push(ref(db, `groups/${activeGroupId}/messages`), {
                 user: currentUser, text: text, type: "text", timestamp: serverTimestamp()
@@ -1589,7 +1478,7 @@
         };
     });
 
-    // LÓGICA DE SUBIDA DE VÍDEOS
+    // SUBIDA DE VÍDEOS
     btnAttachVideo.addEventListener('click', () => { hiddenVideoInput.click(); });
     hiddenVideoInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -1604,11 +1493,7 @@
         reader.readAsDataURL(file);
         reader.onload = function (event) {
             push(ref(db, `groups/${activeGroupId}/messages`), {
-                user: currentUser,
-                text: "[Vídeo]",
-                type: "video",
-                mediaUrl: event.target.result,
-                timestamp: serverTimestamp()
+                user: currentUser, text: "[Vídeo]", type: "video", mediaUrl: event.target.result, timestamp: serverTimestamp()
             }).catch(err => console.error(err));
             hiddenVideoInput.value = "";
         };
@@ -1647,17 +1532,80 @@
         }
     });
 
+    // LLAMADAS GRUPALES
+    function escucharLlamadasPorGrupo(groupId) {
+        if (callStateListener) callStateListener();
+        const callRef = ref(db, `groups/${groupId}/call`);
+        
+        callStateListener = onValue(callRef, (snapshot) => {
+            if (snapshot.exists() && snapshot.val().active === true) {
+                const callData = snapshot.val();
+                activeCallGroupTracking = groupId;
+                
+                if (modalCallScreen.style.display === "flex") {
+                    callBanner.style.display = "none";
+                } else {
+                    callBannerText.textContent = `📞 Llamada en curso (Iniciada por ${callData.startedBy})`;
+                    callBanner.style.display = "flex";
+                }
+            } else {
+                callBanner.style.display = "none";
+                if (activeCallGroupTracking === groupId) {
+                    modalCallScreen.style.display = "none";
+                    clearInterval(callTimerInterval);
+                }
+            }
+        });
+    }
+
+    btnGroupCall.addEventListener('click', async () => {
+        if (!activeGroupId) return;
+        const callRef = ref(db, `groups/${activeGroupId}/call`);
+        await set(callRef, {
+            active: true, startedBy: currentUser, timestamp: serverTimestamp()
+        });
+        desplegarPantallaDeLlamadaActiva();
+    });
+
+    document.getElementById('btn-join-call').addEventListener('click', () => {
+        desplegarPantallaDeLlamadaActiva();
+    });
+
+    document.getElementById('btn-decline-call').addEventListener('click', () => {
+        callBanner.style.display = "none";
+    });
+
+    document.getElementById('btn-hangup').addEventListener('click', async () => {
+        if (activeCallGroupTracking) {
+            await set(ref(db, `groups/${activeCallGroupTracking}/call`), { active: false });
+        }
+    });
+
+    function desplegarPantallaDeLlamadaActiva() {
+        callBanner.style.display = "none";
+        document.getElementById('call-screen-title').textContent = cacheGrupos[activeGroupId]?.name || "Llamada de grupo";
+        document.getElementById('call-screen-status').textContent = "Conexión de voz establecida de forma segura";
+        modalCallScreen.style.display = "flex";
+        
+        let totalSegundos = 0;
+        const timerText = document.getElementById('call-timer');
+        timerText.textContent = "00:00";
+        clearInterval(callTimerInterval);
+        
+        callTimerInterval = setInterval(() => {
+            totalSegundos++;
+            let min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
+            let seg = String(totalSegundos % 60).padStart(2, '0');
+            timerText.textContent = `${min}:${seg}`;
+        }, 1000);
+    }
+
     // SALIDA DE LA APP
     document.getElementById('btn-logout').addEventListener('click', () => {
         if (chatListener) chatListener();
-        if (noticeListener) noticeListener();
-        
-        clearInterval(banInterval);
-        tiempoRestanteBan = 0;
-        msgHistory = [];
-        haSidoAdvertido = false;
-
-        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; selectedUserPrivate = "";
+        if (callStateListener) callStateListener();
+        clearInterval(callTimerInterval);
+        currentUser = ""; activeGroupId = ""; selectedUserLogin = ""; activeCallGroupTracking = null;
         desactivarInputsDeChat();
         toggleSidebar(false);
         renderLoginUsersGrid(); 
